@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DrugTime - Interactive Gantt Chart & Sprint Roadmap</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt/dist/frappe-gantt.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2b6cb0;
+      --primary-dark: #1a4971;
+      --accent: #319795;
+      --bg-main: #f7fafc;
+      --bg-card: #ffffff;
+      --border: #e2e8f0;
+      --text-main: #2d3748;
+      --text-muted: #718096;
+      --done-color: #38a169;
+      --active-color: #3182ce;
+      --pending-color: #a0aec0;
+      --milestone-color: #4a5568;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding: 24px;
+    }
+    .header-card {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .project-badge {
+      display: inline-block;
+      background: #ebf8ff;
+      color: #2b6cb0;
+      font-weight: 600;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1a202c;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+      max-width: 800px;
+    }
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .stat-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+    .stat-val {
+      font-size: 20px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-top: 2px;
+    }
+    .controls-card {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 16px 20px;
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+    }
+    .btn-group {
+      display: inline-flex;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .btn-group button {
+      background: #fff;
+      border: none;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border-right: 1px solid var(--border);
+    }
+    .btn-group button:last-child {
+      border-right: none;
+    }
+    .btn-group button.active, .btn-group button:hover {
+      background: var(--primary);
+      color: #fff;
+    }
+    .filter-inputs {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .search-input, .select-filter {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      outline: none;
+      font-family: inherit;
+    }
+    .search-input:focus, .select-filter:focus {
+      border-color: var(--primary);
+    }
+    .legend-row {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+    .gantt-wrapper {
+      background: var(--bg-card);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      overflow-x: auto;
+    }
+    #gantt {
+      min-width: 900px;
+    }
+    /* Frappe Gantt custom overrides */
+    .bar-milestone .bar {
+      fill: #4a5568 !important;
+    }
+    .bar-done .bar {
+      fill: #38a169 !important;
+    }
+    .bar-active .bar {
+      fill: #3182ce !important;
+    }
+    .bar-pending .bar {
+      fill: #a0aec0 !important;
+    }
+    .gantt .bar-progress {
+      fill: #276749 !important;
+    }
+    .details-container {
+      padding: 12px;
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e2e8f0;
+      max-width: 320px;
+      font-family: 'Inter', sans-serif;
+    }
+    .details-container h5 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1a202c;
+      margin-bottom: 6px;
+    }
+    .details-container p {
+      font-size: 12px;
+      color: #4a5568;
+      margin-bottom: 4px;
+    }
+    .details-container .badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #edf2f7;
+      color: #4a5568;
+      margin-top: 4px;
+    }
+    .team-banner {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      font-size: 12px;
+    }
+    .team-pill {
+      background: #edf2f7;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-card">
+    <div class="header-top">
+      <div>
+        <span class="project-badge">DTU C1SE.07 - Capstone Project 1</span>
+        <h1>DrugTime: Mobile Medication Management Platform</h1>
+        <p class="subtitle">
+          Master Gantt Chart & Sprint Backlog Roadmap (10-Sep-2026 to 26-Dec-2026).
+          Tracking 6 two-week sprints, architecture milestones, and compliance verification under PDPL 2025.
+        </p>
+      </div>
+      <div style="text-align: right; min-width: 280px;">
+        <div style="margin-bottom: 6px;">
+          <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Project Sponsor:</span>
+          <div style="font-weight: 600; font-size: 13px;">International School, Duy Tan University</div>
+        </div>
+        <div style="margin-bottom: 6px;">
+          <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Project Mentor:</span>
+          <div style="font-weight: 600; font-size: 13px;">Giap Trong Nguyen, Kaopiz Da Nang</div>
+        </div>
+        <div>
+          <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Project Lead:</span>
+          <div style="font-weight: 700; font-size: 15px; color: var(--primary);">Phuc Nguyen Ngoc</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="team-banner">
+      <span style="font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Project Team:</span>
+      <span class="team-pill"><strong>Nguyen Ngoc Phuc</strong> - Leader, Dev, QA</span>
+      <span class="team-pill"><strong>Nguyen Quang Bao</strong> - Dev, QA, DevOps</span>
+      <span class="team-pill"><strong>Nguyen Tan Duc</strong> - Dev, QA, DevOps</span>
+      <span class="team-pill"><strong>Nguyen Van Nguyen</strong> - BA, Dev, QA</span>
+      <span class="team-pill"><strong>Dang Ngo Ngoc Viet</strong> - Dev, QA, DevOps</span>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-label">Total Duration</div>
+        <div class="stat-val">16 Weeks (80 Days)</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Sprints Planned</div>
+        <div class="stat-val">6 Sprints (14d/sprint)</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Total Tasks Tracked</div>
+        <div class="stat-val">63 Tasks</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Current Active Sprint</div>
+        <div class="stat-val" style="color: var(--primary);">Sprint 1 (Onboarding)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls-card">
+    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+      <div class="btn-group" id="view-mode-buttons">
+        <button type="button" data-mode="Day">Day</button>
+        <button type="button" data-mode="Week" class="active">Week</button>
+        <button type="button" data-mode="Month">Month</button>
+      </div>
+
+      <div class="filter-inputs">
+        <input type="text" id="search-box" class="search-input" placeholder="Search task or owner...">
+        <select id="phase-filter" class="select-filter">
+          <option value="all">All Phases & Sprints</option>
+          <option value="Phase 1">Phase 1: Initiation & Architecture</option>
+          <option value="Sprint 1">Sprint 1: Platform, Identity & Core Data</option>
+          <option value="Sprint 2">Sprint 2: Core Reminders & Schedules</option>
+          <option value="Sprint 3">Sprint 3: Adherence & Family Connection</option>
+          <option value="Sprint 4">Sprint 4: Medical Safety & Drug Lookup</option>
+          <option value="Sprint 5">Sprint 5: High-Risk (OCR & Simple Mode)</option>
+          <option value="Sprint 6">Sprint 6: AI Meal & Final Polish</option>
+          <option value="Phase 3">Phase 3: Integration & Defense</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="legend-row">
+      <div class="legend-item"><span class="legend-dot" style="background:#38a169;"></span> Completed (100%)</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#3182ce;"></span> In Progress</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#a0aec0;"></span> Planned</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#4a5568;"></span> Phase Milestone</div>
+    </div>
+  </div>
+
+  <div class="gantt-wrapper">
+    <svg id="gantt"></svg>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/frappe-gantt/dist/frappe-gantt.umd.js"></script>
+  <script>
+    const allTasks = [
+  {
+    "id": "T_1",
+    "name": "1 Project Initiation & Stakeholder Alignment",
+    "start": "2026-09-10",
+    "end": "2026-09-13",
+    "progress": 100,
+    "dependencies": "",
+    "custom_class": "bar-milestone",
+    "owner": "Team 1",
+    "phase": "Phase 1",
+    "full_name": "Project Initiation & Stakeholder Alignment",
+    "duration": 3
+  },
+  {
+    "id": "T_1_1",
+    "name": "1.1 Requirement Gathering & Stakeholder Needs (Patients/Careg...",
+    "start": "2026-09-10",
+    "end": "2026-09-11",
+    "progress": 100,
+    "dependencies": "",
+    "custom_class": "bar-done",
+    "owner": "Nguyen Van Nguyen",
+    "phase": "Phase 1",
+    "full_name": "Requirement Gathering & Stakeholder Needs (Patients/Caregivers/Pharmacies)",
+    "duration": 2
+  },
+  {
+    "id": "T_1_2",
+    "name": "1.2 Project Proposal Preparation & Cost/Budget Estimation ($3...",
+    "start": "2026-09-11",
+    "end": "2026-09-12",
+    "progress": 100,
+    "dependencies": "T_1_1",
+    "custom_class": "bar-done",
+    "owner": "Nguyen Ngoc Phuc",
+    "phase": "Phase 1",
+    "full_name": "Project Proposal Preparation & Cost/Budget Estimation ($3,998)",
+    "duration": 2
+  },
+  {
+    "id": "T_1_3",
+    "name": "1.3 Proposal Presentation & Capstone Review Panel Approval",
+    "start": "2026-09-12",
+    "end": "2026-09-13",
+    "progress": 100,
+    "dependencies": "T_1_2",
+    "custom_class": "bar-done",
+    "owner": "Team 1",
+    "phase": "Phase 1",
+    "full_name": "Proposal Presentation & Capstone Review Panel Approval",
+    "duration": 2
+  },
+  {
+    "id": "T_2",
+    "name": "2 Planning & Architecture Design",
+    "start": "2026-09-12",
+    "end": "2026-09-25",
+    "progress": 100,
+    "dependencies": "",
+    "custom_class": "bar-milestone",
+    "owner": "Team 1",
+    "phase": "Phase 1",
+    "full_name": "Planning & Architecture Design",
+    "duration": 13
+  },
+  {
+    "id": "T_2_1",
+    "name": "2.1 Project Plan Preparation, Work Breakdown & Risk Register",
+    "start": "2026-09-12",
+    "end": "2026-09-14",
+    "progress": 100,
+    "dependencies": "",
+    "custom_class": "bar-done",
+    "owner": "Nguyen Ngoc Phuc",
+    "phase": "Phase 1",
+    "full_name": "Project Plan Preparation, Work Breakdown & Risk Register",
+    "duration": 3
+  },
+  {
+    "id": "T_2_2",
+    "name": "2.2 Architecture Design Document (Context/Container/Component...",
+    "start": "2026-09-14",
+    "end": "2026-09-18",
+    "progress": 100,
+    "dependencies": "T_2_1",
+    "custom_class": "bar-done",
+    "owner": "Duc, Bao, Viet",
+    "phase": "Phase 1",
+    "full_name": "Architecture Design Document (Context/Container/Component & Non-functional)",
+    "duration": 5
+  },
+  {
+    "id": "T_2_3",
+    "name": "2.3 Database Design Documents & Entity-Relationship Specifica...",
+    "start": "2026-09-21",
+    "end": "2026-09-25",
+    "progress": 100,
+    "dependencies": "T_2_2",
+    "custom_class": "bar-done",
+    "owner": "Phuc, Nguyen",
+    "phase": "Phase 1",
+    "full_name": "Database Design Documents & Entity-Relationship Specifications (Schema v2)",
+    "duration": 5
+  },
+  {
+    "id": "T_3",
+    "name": "3 Sprint 1 - Platform, Identity & Core Data",
+    "start": "2026-09-14",
+    "end": "2026-09-27",
+    "progress": 35,
+    "dependencies": "",
+    "custom_class": "bar-milestone",
+    "owner": "Team 1",
+    "phase": "Phase 2",
+    "full_name": "Sprint 1 - Platform, Identity & Core Data",
+    "duration": 14
+  },
+  {
+    "id": "T_3_01",
+    "name": "3.01 [1.01] PB08: Design ERD (patient, medication, consent, ca...",
+    "start": "2026-09-14",
+    "end": "2026-09-16",
+    "progress": 100,
+    "dependencies": "",
+    "custom_class": "bar-done",
+    "owner": "Phuc, Nguyen",
+    "phase": "Sprint 1",
+    "full_name": "[1.01] PB08: Design ERD (patient, medication, consent, catalog tables)",
+    "duration": 3
+  },
+  {
+    "id": "T_3_02",
+    "name": "3.02 [1.02] PB08: Write Supabase migration scripts",
+    "start": "2026-09-16",
+    "end": "2026-09-18",
+    "progress": 75,
+    "dependencies": "T_3_01",
+    "custom_class": "bar-active",
+    "owner": "Phuc, Nguyen",
+    "phase": "Sprint 1",
+    "full_name": "[1.02] PB08: Write Supabase migration scripts",
+    "duration": 3
+  },
+  {
+    "id": "T_3_03",
+    "name": "3.03 [1.03] PB08: Review & test migrations on clean DB",
+    "start": "2026-09-18",
+    "end": "2026-09-21",
+    "progress": 20,
+    "dependencies": "T_3_02",
+    "custom_class": "bar-active",
+    "owner": "Viet, Bao, Duc",
+    "phase": "Sprint 1",
+    "full_name": "[1.03] PB08: Review & test migrations on clean DB",
+    "duration": 2
+  },
+  {
+    "id": "T_3_04",
+    "name": "3.04 [1.04] PB07: Setup GitHub Actions (lint + test on PR)",
+    "start": "2026-09-14",
+    "end": "2026-09-17",
+    "progress": 80,
+    "dependencies": "",
+    "custom_class": "bar-active",
+    "owner": "Nguyen Quang Bao",
+    "phase": "Sprint 1",
+    "full_name": "[1.04] PB07: Setup GitHub Actions (lint + test on PR)",
+    "duration": 4
+  },
+  {
+    "id": "T_3_05",
+    "name": "3.05 [1.05] PB07: Setup auto-deploy to Oracle Cloud VM & Caddy...",
+    "start": "2026-09-17",
+    "end": "2026-09-21",
+    "progress": 60,
+    "dependencies": "T_3_04",
+    "custom_class": "bar-active",
+    "owner": "Nguyen Tan Duc",
+    "phase": "Sprint 1",
+    "full_name": "[1.05] PB07: Setup auto-deploy to Oracle Cloud VM & Caddy reverse proxy",
+    "duration": 3
+  },
+  {
+    "id": "T_3_06",
+    "name": "3.06 [1.07] PB29: Confirm Mac access + configure free Apple ID...",
+    "start": "2026-09-18",
+    "end": "2026-09-21",
+    "progress": 50,
+    "dependencies": "",
+    "custom_class": "bar-active",
+    "owner": "Duc, Phuc",
+    "phase": "Sprint 1",
+    "full_name": "[1.07] PB29: Confirm Mac access + configure free Apple ID in Xcode",
+    "duration": 2
+  },
+  {
+    "id": "T_3_07",
+    "name": "3.07 [1.08] PB29: Configure Xcode project + automatic signing",
+    "start": "2026-09-21",
+    "end": "2026-09-23",
+    "progress": 20,
+    "dependencies": "T_3_06",
+    "custom_class": "bar-active",
+    "owner": "Duc, Phuc",
+    "phase": "Sprint 1",
+    "full_name": "[1.08] PB29: Configure Xcode project + automatic signing",
+    "duration": 3
+  },
+  {
+    "id": "T_3_08",
+    "name": "3.08 [1.09] PB29: Test: build & run app on real device via Xco...",
+    "start": "2026-09-23",
+    "end": "2026-09-25",
+    "progress": 0,
+    "dependencies": "T_3_07",
+    "custom_class": "bar-pending",
+    "owner": "Duc, Phuc",
+    "phase": "Sprint 1",
+    "full_name": "[1.09] PB29: Test: build & run app on real device via Xcode (debugging)",
+    "duration": 3
+  },
+  {
+    "id": "T_3_09",
+    "name": "3.09 [1.10] PB01: Backend: Supabase Auth integration (register...",
+    "start": "2026-09-21",
+    "end": "2026-09-23",
+    "progress": 40,
+    "dependencies": "T_3_02",
+    "custom_class": "bar-active",
+    "owner": "Nguyen, Bao",
+    "phase": "Sprint 1",
+    "full_name": "[1.10] PB01: Backend: Supabase Auth integration (register/login API)",
+    "duration": 3
+  },
+  {
+    "id": "T_3_10",
+    "name": "3.10 [1.11] PB01: Mobile: Register/Login UI screens (Flutter)",
+    "start": "2026-09-21",
+    "end": "2026-09-24",
+    "progress": 30,
+    "dependencies": "T_3_06",
+    "custom_class": "bar-active",
+    "owner": "Bao, Duc",
+    "phase": "Sprint 1",
+    "full_name": "[1.11] PB01: Mobile: Register/Login UI screens (Flutter)",
+    "duration": 4
+  },
+  {
+    "id": "T_3_11",
+    "name": "3.11 [1.12] PB01: Mobile-Backend integration + error handling",
+    "start": "2026-09-24",
+    "end": "2026-09-25",
+    "progress": 0,
+    "dependencies": "T_3_09, T_3_10",
+    "custom_class": "bar-pending",
+    "owner": "Bao, Duc",
+    "phase": "Sprint 1",
+    "full_name": "[1.12] PB01: Mobile-Backend integration + error handling",
+    "duration": 2
+  },
+  {
+    "id": "T_3_12",
+    "name": "3.12 [1.13] PB01: Test: unit + widget test (Auth flow)",
+    "start": "2026-09-25",
+    "end": "2026-09-25",
+    "progress": 0,
+    "dependencies": "T_3_11",
+    "custom_class": "bar-pending",
+    "owner": "Bao, Duc",
+    "phase": "Sprint 1",
+    "full_name": "[1.13] PB01: Test: unit + widget test (Auth flow)",
+    "duration": 1
+  },
+  {
+    "id": "T_3_13",
+    "name": "3.13 [1.14] PB02: Backend: consents table + grant/revoke API p...",
+    "start": "2026-09-21",
+    "end": "2026-09-23",
+    "progress": 30,
+    "dependencies": "T_3_02",
+    "custom_class": "bar-active",
+    "owner": "Viet, Phuc",
+    "phase": "Sprint 1",
+    "full_name": "[1.14] PB02: Backend: consents table + grant/revoke API per purpose (PDPL 2025)",
+    "duration": 3
+  },
+  {
+    "id": "T_3_14",
+    "name": "3.14 [1.15] PB02: Mobile: consent UI (per-purpose toggles, no ...",
+    "start": "2026-09-23",
+    "end": "2026-09-25",
+    "progress": 0,
+    "dependencies": "T_3_13",
+    "custom_class": "bar-pending",
+    "owner": "Viet, Phuc",
+    "phase": "Sprint 1",
+    "full_name": "[1.15] PB02: Mobile: consent UI (per-purpose toggles, no 'Accept All')",
+    "duration": 3
+  },
+  {
+    "id": "T_3_15",
+    "name": "3.15 [1.16] PB02: Test: consent flow end-to-end",
+    "start": "2026-09-25",
+    "end": "2026-09-25",
+    "progress": 0,
+    "dependencies": "T_3_14",
+    "custom_class": "bar-pending",
+    "owner": "Viet, Phuc",
+    "phase": "Sprint 1",
+    "full_name": "[1.16] PB02: Test: consent flow end-to-end",
+    "duration": 1
+  },
+  {
+    "id": "T_3_16",
+    "name": "3.16 [1.17] PB06: Research/parse Vietnamese Drug Regulatory Da...",
+    "start": "2026-09-15",
+    "end": "2026-09-22",
+    "progress": 50,
+    "dependencies": "",
+    "custom_class": "bar-active",
+    "owner": "All team member",
+    "phase": "Sprint 1",
+    "full_name": "[1.17] PB06: Research/parse Vietnamese Drug Regulatory Data Source structure",
+    "duration": 6
+  },
+  {
+    "id": "T_3_17",
+    "name": "3.17 [1.18] PB06: Build RQ scheduled sync job & Redis queue",
+    "start": "2026-09-21",
+    "end": "2026-09-25",
+    "progress": 10,
+    "dependencies": "T_3_16",
+    "custom_class": "bar-active",
+    "owner": "All team member",
+    "phase": "Sprint 1",
+    "full_name": "[1.18] PB06: Build RQ scheduled sync job & Redis queue",
+    "duration": 5
+  },
+  {
+    "id": "T_3_18",
+    "name": "3.18 [1.19] PB41: Draft preliminary DPIA (planned sensitive-da...",
+    "start": "2026-09-22",
+    "end": "2026-09-25",
+    "progress": 25,
+    "dependencies": "T_3_01",
+    "custom_class": "bar-active",
+    "owner": "Phuc, Nguyen",
+    "phase": "Sprint 1",
+    "full_name": "[1.19] PB41: Draft preliminary DPIA (planned sensitive-data flows)",
+    "duration": 4
+  },
+  {
+    "id": "T_4",
+    "name": "4 Sprint 2 - Core Reminders & Schedules",
+    "start": "2026-09-28",
+    "end": "2026-10-11",
+    "progress": 0,
+    "dependencies": "",
+    "custom_class": "bar-milestone",
+    "owner": "Team 1",
+    "phase": "Phase 2",
+    "full_name": "Sprint 2 - Core Reminders & Schedules",
+    "duration": 14
+  },
+  {
+    "id": "T_4_1",
+    "name": "4.1 [PB10] Medication Entry API & Mobile Manual Form",
+    "start": "2026-09-28",
+    "end": "2026-10-02",
+    "progress": 0,
+    "dependencies": "T_3_09",
+    "custom_class": "bar-pending",
+    "owner": "Nguyen, Viet, Bao, Duc",
+    "phase": "Sprint 2",
+    "full_name": "[PB10] Medication Entry API & Mobile Manual Form",
+    "duration": 5
+  },
+  {
+    "id": "T_4_2",
+    "name": "4.2 [PB11] Medication Schedule CRUD API & Edit UI",
+    "start": "2026-10-01",
+    "end": "2026-10-06",
+    "progress": 0,
+    "dependencies": "T_4_1",
+    "custom_class": "bar-pending",
+    "owner": "Nguyen, Phuc, Bao, Duc",
+    "phase": "Sprint 2",
+    "full_name": "[PB11] Medication Schedule CRUD API & Edit UI",
+    "duration": 4
+  },
+  {
+    "id": "T_4_3",
+    "name": "4.3 [PB12] Local Notification Engine & Offline Reminder Sched...",
+    "start": "2026-10-05",
+    "end": "2026-10-09",
+    "progress": 0,
+    "dependencies": "T_4_2",
+    "custom_class": "bar-pending",
+    "owner": "Duc, Phuc",
+    "phase": "Sprint 2",
+    "full_name": "[PB12] Local Notification Engine & Offline Reminder Scheduling",
+    "duration": 5
+  },
+  {
+    "id": "T_4_4",
+    "name": "4.4 [PB13] Dose Confirmation Intake Button & Logging",
+    "start": "2026-10-07",
+    "end": "2026-10-09",
+    "progress": 0,
+    "dependencies": "T_4_3",
+    "custom_class": "bar-pending",
+    "owner": "Bao, Duc",
+    "phase": "Sprint 2",
+    "full_name": "[PB13] Dose Confirmation Intake Button & Logging",
+    "duration": 3
+  },
+  {
+    "id": "T_4_5",
+    "name": "4.5 [PB04/05] Admin Web Dashboard: Medication & Interaction C...",
+    "start": "2026-09-28",
+    "end": "2026-10-08",
+    "progress": 0,
+    "dependencies": "T_3_02",
+    "custom_class": "bar-pending",
+    "owner": "Bao, Viet, Nguyen",
+    "phase": "Sprint 2",
+    "full_name": "[PB04/05] Admin Web Dashboard: Medication & Interaction Catalog CRUD",
+    "duration": 9
+  },
+  {
+    "id": "T_4_6",
+    "name": "4.6 [PB09] Patient-Family Linking Data Model & Migration",
+    "start": "2026-10-05",
+    "end": "2026-10-09",
+    "progress": 0,
+    "dependencies": "T_3_02",
+    "custom_class": "bar-pending",
+    "owner": "Phuc, Nguyen, Viet",
+    "phase": "Sprint 2",
+    "full_name": "[PB09] Patient-Family Linking Data Model & Migration",
+    "duration": 5
+  },
+  {
+    "id": "T_5",
+    "name": "5 Sprint 3 - Adherence Tracking & Family Connection",
+    "start": "2026-10-12",
+    "end": "2026-10-25",
+    "progress": 0,
+    "dependencies": "",
+    "custom_class": "bar-milestone",
+    "owner": "Team 1",
+    "phase": "Phase 2",
+    "full_name": "Sprint 3 - Adherence Tracking & Family Connection",
+    "duration": 14
+  },
+  {
+    "id": "T_5_1",
+    "name": "5.1 [PB14] Adherence History Calendar & Summary View",
+    "start": "2026-10-12",
+    "end": "2026-10-16",
+    "progress": 0,
+    "dependencies": "T_4_4",
+    "custom_class": "bar-pending",
+    "owner": "Phuc, Viet, Bao, Duc",
+    "phase": "Sprint 3",
+    "full_name": "[PB14] Adherence History Calendar & Summary View",
+    "duration": 5
+  },
+  {
+    "id": "T_5_2",
+    "name": "5.2 [PB15/19] QR Code & Referral Code Linking Mechanism",
+    "start": "2026-10-14",
+    "end": "2026-10-19",
+    "progress": 0,
+    "dependencies": "T_4_6",
+    "custom_class": "bar-pending",
+    "owner": "Nguyen, Phuc, Bao, Duc",
+    "phase": "Sprint 3",
+    "full_name": "[PB15/19] QR Code & Referral Code Linking Mechanism",
+    "duration": 4
+  },
+  {
+    "id": "T_5_3",
+    "name": "5.3 [PB16/18] Data-Sharing Consent Controls & Scoped Revocation",
+    "start": "2026-10-16",
+    "end": "2026-10-21",
+    "progress": 0,
+    "dependencies": "T_5_2",
+    "custom_class": "bar-pending",
+    "owner": "Viet, Phuc",
+    "phase": "Sprint 3",
+    "full_name": "[PB16/18] Data-Sharing Consent Controls & Scoped Revocation",
+    "duration": 4
+  },
+  {
+    "id": "T_5_4",
+    "name": "5.4 [PB20] Real-time Missed-Dose Alerts for Linked Caregivers",
+    "start": "2026-10-19",
+    "end": "2026-10-23",
+    "progress": 0,
+    "dependencies": "T_5_3",
+    "custom_class": "bar-pending",
+    "owner": "Bao, Duc, Viet",
+    "phase": "Sprint 3",
+    "full_name": "[PB20] Real-time Missed-Dose Alerts for Linked Caregivers",
+    "duration": 5
+  },
+  {
+    "id": "T_5_5",
+    "name": "5.5 [PB22] Multi-Patient Switcher UI for Family Caregivers",
+    "start": "2026-10-21",
+    "end": "2026-10-23",
+    "progress": 0,
+    "dependencies": "T_5_4",
+    "custom_class": "bar-pending",
+    "owner": "Bao, Duc, Viet",
+    "phase": "Sprint 3",
+    "full_name": "[PB22] Multi-Patient Switcher UI for Family Caregivers",
+    "duration": 3
+  },
+  {
+    "id": "T_6",
+    "name": "6 Sprint 4 - Medical Safety & Drug Lookup",
+    "start": "2026-10-26",
+    "end": "2026-11-08",
+    "progress": 0,
+    "dependencies": "",
+    "custom_class": "bar-milestone",
+    "owner": "Team 1",
+    "phase": "Phase 2",
+    "full_name": "Sprint 4 - Medical Safety & Drug Lookup",
+    "duration": 14
+  },
+  {
+    "id": "T_6_1",
+    "name": "6.1 [PB23] Vietnamese Drug Regulatory Catalog Search & Detail...",
+    "start": "2026-10-26",
+    "end": "2026-10-30",
+    "progress": 0,
+    "dependencies": "T_3_17",
+    "custom_class": "bar-pending",
+    "owner": "Nguyen, Viet, Bao, Duc",
+    "phase": "Sprint 4",
+    "full_name": "[PB23] Vietnamese Drug Regulatory Catalog Search & Detail View",
+    "duration": 5
+  },
+  {
+    "id": "T_6_2",
+    "name": "6.2 [PB24] Drug-Drug Interaction Checking Engine & Warning UI",
+    "start": "2026-10-28",
+    "end": "2026-11-03",
+    "progress": 0,
+    "dependencies": "T_6_1",
+    "custom_class": "bar-pending",
+    "owner": "Nguyen, Viet, Bao, Duc",
+    "phase": "Sprint 4",
+    "full_name": "[PB24] Drug-Drug Interaction Checking Engine & Warning UI",
+    "duration": 5
+  },
+  {
+    "id": "T_6_3",
+    "name": "6.3 [PB25] Drug-Food Interaction Checking Engine & Warning UI",
+    "start": "2026-11-02",
+    "end": "2026-11-06",
+    "progress": 0,
+    "dependencies": "T_6_2",
+    "custom_class": "bar-pending",
+    "owner": "Nguyen, Viet, Bao, Duc",
+    "phase": "Sprint 4",
+    "full_name": "[PB25] Drug-Food Interaction Checking Engine & Warning UI",
+    "duration": 5
+  },
+  {
+    "id": "T_6_4",
+    "name": "6.4 [PB26-28] Family Member Scoped Access for Drug Safety Lookup",
+    "start": "2026-11-04",
+    "end": "2026-11-06",
+    "progress": 0,
+    "dependencies": "T_6_3",
+    "custom_class": "bar-pending",
+    "owner": "Viet, Phuc",
+    "phase": "Sprint 4",
+    "full_name": "[PB26-28] Family Member Scoped Access for Drug Safety Lookup",
+    "duration": 3
+  },
+  {
+    "id": "T_6_5",
+    "name": "6.5 [PB30] Cross-Device Android & iOS Comprehensive Testing C...",
+    "start": "2026-11-05",
+    "end": "2026-11-06",
+    "progress": 0,
+    "dependencies": "T_6_4",
+    "custom_class": "bar-pending",
+    "owner": "Team 1",
+    "phase": "Sprint 4",
+    "full_name": "[PB30] Cross-Device Android & iOS Comprehensive Testing Checklist",
+    "duration": 2
+  },
+  {
+    "id": "T_7",
+    "name": "7 Sprint 5 - High-Risk / Complex Features",
+    "start": "2026-11-09",
+    "end": "2026-11-22",
+    "progress": 0,
+    "dependencies": "",
+    "custom_class": "bar-milestone",
+    "owner": "Team 1",
+    "phase": "Phase 2",
+    "full_name": "Sprint 5 - High-Risk / Complex Features",
+    "duration": 14
+  },
+  {
+    "id": "T_7_1",
+    "name": "7.1 [PB31] On-Device ML Kit OCR for Blister-Pack Scanning",
+    "start": "2026-11-09",
+    "end": "2026-11-13",
+    "progress": 0,
+    "dependencies": "T_6_1",
+    "custom_class": "bar-pending",
+    "owner": "Bao, Duc, Viet",
+    "phase": "Sprint 5",
+    "full_name": "[PB31] On-Device ML Kit OCR for Blister-Pack Scanning",
+    "duration": 5
+  },
+  {
+    "id": "T_7_2",
+    "name": "7.2 [PB32] OCR Text Matching Algorithm & Mandatory Manual Con...",
+    "start": "2026-11-12",
+    "end": "2026-11-17",
+    "progress": 0,
+    "dependencies": "T_7_1",
+    "custom_class": "bar-pending",
+    "owner": "Nguyen, Viet, Bao",
+    "phase": "Sprint 5",
+    "full_name": "[PB32] OCR Text Matching Algorithm & Mandatory Manual Confirmation",
+    "duration": 4
+  },
+  {
+    "id": "T_7_3",
+    "name": "7.3 [PB33] Simple Mode High-Contrast UI for Elderly Users",
+    "start": "2026-11-16",
+    "end": "2026-11-19",
+    "progress": 0,
+    "dependencies": "T_7_2",
+    "custom_class": "bar-pending",
+    "owner": "Bao, Duc",
+    "phase": "Sprint 5",
+    "full_name": "[PB33] Simple Mode High-Contrast UI for Elderly Users",
+    "duration": 4
+  },
+  {
+    "id": "T_7_4",
+    "name": "7.4 [PB34/35] Consent Withdrawal & Right-to-be-Forgotten Data...",
+    "start": "2026-11-16",
+    "end": "2026-11-20",
+    "progress": 0,
+    "dependencies": "T_3_13",
+    "custom_class": "bar-pending",
+    "owner": "Viet, Phuc, Nguyen",
+    "phase": "Sprint 5",
+    "full_name": "[PB34/35] Consent Withdrawal & Right-to-be-Forgotten Data Deletion Flow",
+    "duration": 5
+  },
+  {
+    "id": "T_7_5",
+    "name": "7.5 [PB36] Sensitive-Data Access Audit Logging & Admin Log Vi...",
+    "start": "2026-11-18",
+    "end": "2026-11-20",
+    "progress": 0,
+    "dependencies": "T_7_4",
+    "custom_class": "bar-pending",
+    "owner": "Nguyen, Viet, Phuc, Bao",
+    "phase": "Sprint 5",
+    "full_name": "[PB36] Sensitive-Data Access Audit Logging & Admin Log Viewer",
+    "duration": 3
+  },
+  {
+    "id": "T_8",
+    "name": "8 Sprint 6 - AI & Final Polish",
+    "start": "2026-11-23",
+    "end": "2026-12-06",
+    "progress": 0,
+    "dependencies": "",
+    "custom_class": "bar-milestone",
+    "owner": "Team 1",
+    "phase": "Phase 2",
+    "full_name": "Sprint 6 - AI & Final Polish",
+    "duration": 14
+  },
+  {
+    "id": "T_8_1",
+    "name": "8.1 [PB37] AI Meal Suggestion Engine with Explanations & Medi...",
+    "start": "2026-11-23",
+    "end": "2026-11-27",
+    "progress": 0,
+    "dependencies": "T_6_3",
+    "custom_class": "bar-pending",
+    "owner": "Nguyen, Viet, Phuc, Bao",
+    "phase": "Sprint 6",
+    "full_name": "[PB37] AI Meal Suggestion Engine with Explanations & Medical Disclaimers",
+    "duration": 5
+  },
+  {
+    "id": "T_8_2",
+    "name": "8.2 [PB39] Scoped AI Meal Suggestions for Family Caregivers",
+    "start": "2026-11-26",
+    "end": "2026-11-30",
+    "progress": 0,
+    "dependencies": "T_8_1",
+    "custom_class": "bar-pending",
+    "owner": "Nguyen, Bao",
+    "phase": "Sprint 6",
+    "full_name": "[PB39] Scoped AI Meal Suggestions for Family Caregivers",
+    "duration": 3
+  },
+  {
+    "id": "T_8_3",
+    "name": "8.3 [PB41/42] Final DPIA Sign-Off & PDPL 2025 Regulatory Comp...",
+    "start": "2026-11-26",
+    "end": "2026-12-01",
+    "progress": 0,
+    "dependencies": "T_7_4",
+    "custom_class": "bar-pending",
+    "owner": "Phuc, Nguyen, Viet",
+    "phase": "Sprint 6",
+    "full_name": "[PB41/42] Final DPIA Sign-Off & PDPL 2025 Regulatory Compliance Audit",
+    "duration": 4
+  },
+  {
+    "id": "T_8_4",
+    "name": "8.4 [PB43] Full-System Regression Testing & Defect Fixing (An...",
+    "start": "2026-11-30",
+    "end": "2026-12-04",
+    "progress": 0,
+    "dependencies": "T_8_1, T_8_3",
+    "custom_class": "bar-pending",
+    "owner": "Team 1",
+    "phase": "Sprint 6",
+    "full_name": "[PB43] Full-System Regression Testing & Defect Fixing (Android + iOS)",
+    "duration": 5
+  },
+  {
+    "id": "T_9",
+    "name": "9 Integration and Final Release",
+    "start": "2026-12-07",
+    "end": "2026-12-16",
+    "progress": 0,
+    "dependencies": "",
+    "custom_class": "bar-milestone",
+    "owner": "Team 1",
+    "phase": "Phase 3",
+    "full_name": "Integration and Final Release",
+    "duration": 10
+  },
+  {
+    "id": "T_9_1",
+    "name": "9.1 End-to-End Core User Journey Verification (Onboard -> Rem...",
+    "start": "2026-12-07",
+    "end": "2026-12-09",
+    "progress": 0,
+    "dependencies": "T_8_4",
+    "custom_class": "bar-pending",
+    "owner": "Team 1",
+    "phase": "Phase 3",
+    "full_name": "End-to-End Core User Journey Verification (Onboard -> Reminder -> Dose -> Alert -> AI)",
+    "duration": 3
+  },
+  {
+    "id": "T_9_2",
+    "name": "9.2 Final Submission Package (Source Code, APK/IPA, Docs, Dep...",
+    "start": "2026-12-10",
+    "end": "2026-12-14",
+    "progress": 0,
+    "dependencies": "T_9_1",
+    "custom_class": "bar-pending",
+    "owner": "Phuc, Bao, Duc",
+    "phase": "Phase 3",
+    "full_name": "Final Submission Package (Source Code, APK/IPA, Docs, Deployment Setup)",
+    "duration": 3
+  },
+  {
+    "id": "T_9_3",
+    "name": "9.3 Project Retrospective & Capstone Defense Demo Rehearsal",
+    "start": "2026-12-14",
+    "end": "2026-12-16",
+    "progress": 0,
+    "dependencies": "T_9_2",
+    "custom_class": "bar-pending",
+    "owner": "Team 1",
+    "phase": "Phase 3",
+    "full_name": "Project Retrospective & Capstone Defense Demo Rehearsal",
+    "duration": 3
+  },
+  {
+    "id": "T_10",
+    "name": "10 Capstone Defense",
+    "start": "2026-12-17",
+    "end": "2026-12-25",
+    "progress": 0,
+    "dependencies": "",
+    "custom_class": "bar-milestone",
+    "owner": "Team 1",
+    "phase": "Phase 3",
+    "full_name": "Capstone Defense",
+    "duration": 7
+  },
+  {
+    "id": "T_10_1",
+    "name": "10.1 Capstone Project 1 Final Defense Presentation & System De...",
+    "start": "2026-12-17",
+    "end": "2026-12-25",
+    "progress": 0,
+    "dependencies": "T_9_3",
+    "custom_class": "bar-pending",
+    "owner": "Team 1",
+    "phase": "Phase 3",
+    "full_name": "Capstone Project 1 Final Defense Presentation & System Demonstration",
+    "duration": 7
+  }
+];
+
+    let currentTasks = [...allTasks];
+    let gantt = null;
+
+    function initGantt(tasks, mode = 'Week') {
+      document.getElementById('gantt').innerHTML = '';
+      if (tasks.length === 0) {
+        document.getElementById('gantt').innerHTML = '<text x="20" y="50" fill="#718096">No tasks found matching filter.</text>';
+        return;
+      }
+      gantt = new Gantt("#gantt", tasks, {
+        header_height: 50,
+        column_width: mode === 'Day' ? 38 : (mode === 'Week' ? 55 : 90),
+        step: 24,
+        view_modes: ['Day', 'Week', 'Month'],
+        view_mode: mode,
+        date_format: 'YYYY-MM-DD',
+        custom_popup_html: function(task) {
+          return `
+            <div class="details-container">
+              <h5>${task.full_name || task.name}</h5>
+              <p><strong>Owner:</strong> ${task.owner || 'Team 1'}</p>
+              <p><strong>Dates:</strong> ${task._start.toLocaleDateString('en-GB')}  ${task._end.toLocaleDateString('en-GB')} (${task.duration || 1} days)</p>
+              <p><strong>Progress:</strong> ${task.progress}%</p>
+              <span class="badge">${task.phase || 'Roadmap'}</span>
+            </div>
+          `;
+        }
+      });
+    }
+
+    // Initial render
+    initGantt(currentTasks, 'Week');
+
+    // View mode handlers
+    document.querySelectorAll('#view-mode-buttons button').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('#view-mode-buttons button').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        const mode = e.target.getAttribute('data-mode');
+        if (gantt) {
+          gantt.change_view_mode(mode);
+        }
+      });
+    });
+
+    // Filtering logic
+    function applyFilters() {
+      const query = document.getElementById('search-box').value.toLowerCase();
+      const phase = document.getElementById('phase-filter').value;
+
+      currentTasks = allTasks.filter(t => {
+        const matchQuery = t.name.toLowerCase().includes(query) || (t.owner && t.owner.toLowerCase().includes(query));
+        const matchPhase = (phase === 'all') || (t.phase === phase);
+        return matchQuery && matchPhase;
+      });
+
+      const activeMode = document.querySelector('#view-mode-buttons button.active').getAttribute('data-mode');
+      initGantt(currentTasks, activeMode);
+    }
+
+    document.getElementById('search-box').addEventListener('input', applyFilters);
+    document.getElementById('phase-filter').addEventListener('change', applyFilters);
+  </script>
+</body>
+</html>
