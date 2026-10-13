@@ -254,21 +254,16 @@ CREATE TABLE caregiver_links (
 CREATE INDEX caregiver_links_family_idx ON caregiver_links (family_user_id, status);
 CREATE INDEX caregiver_links_patient_idx ON caregiver_links (patient_user_id, status);
 
+-- QD-04: mỗi user đúng một mã liên kết cố định, không hết hạn, không đổi (task 3.10,
+-- migration 20261013040307_link_codes_one_fixed_code_per_user). Nhập mã chỉ tạo yêu cầu liên kết.
 CREATE TABLE link_codes (
     id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     patient_user_id uuid NOT NULL REFERENCES users (id),
     code text NOT NULL UNIQUE,
-    expires_at timestamptz NOT NULL,
-    is_used boolean NOT NULL DEFAULT false,
-    family_user_id uuid REFERENCES users (id),
     created_at timestamptz NOT NULL DEFAULT now(),
-    CHECK (family_user_id IS NULL OR is_used),
-    CHECK (family_user_id IS NULL OR family_user_id <> patient_user_id),
-    CHECK (expires_at > created_at)
+    CONSTRAINT link_codes_patient_user_id_key UNIQUE (patient_user_id),
+    CONSTRAINT link_codes_code_format_check CHECK (code ~ '^[A-HJKMNP-Z2-9]{10}$')
 );
-
-CREATE INDEX link_codes_patient_idx ON link_codes (patient_user_id);
-CREATE INDEX link_codes_family_idx ON link_codes (family_user_id);
 
 CREATE TABLE device_tokens (
     id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -519,8 +514,11 @@ GRANT SELECT, UPDATE ON data_deletion_requests TO worker_role;
 
 GRANT SELECT, INSERT, UPDATE ON dpia_records TO api_role;
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON caregiver_links, link_codes TO api_role;
-GRANT SELECT, UPDATE, DELETE ON caregiver_links, link_codes TO worker_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON caregiver_links TO api_role;
+GRANT SELECT, UPDATE, DELETE ON caregiver_links TO worker_role;
+-- link_codes: API đọc/tạo mã; Worker đọc/xóa khi xóa dữ liệu người dùng (task 3.10).
+GRANT SELECT, INSERT ON link_codes TO api_role;
+GRANT SELECT, DELETE ON link_codes TO worker_role;
 
 GRANT SELECT, INSERT ON access_logs TO api_role;
 
