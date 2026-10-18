@@ -1,0 +1,1688 @@
+{
+  "info": {
+    "_postman_id": "df00e975-eec0-4423-bb9c-6cbbaca6cc22",
+    "name": "DrugTime API (Local)",
+    "description": "Local API requests organized by endpoint module. Set environment base_url. Authentication tokens are placeholders; use the auth requests to obtain them. OpenAPI routes are the source of truth.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "email",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "otp",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "phone",
+      "value": "0900000001",
+      "type": "string"
+    },
+    {
+      "key": "admin_email",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_password",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Mobile - Email OTP",
+      "item": [
+        {
+          "name": "1. Request OTP (email)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/mobile/otp",
+              "path": [
+                "auth",
+                "mobile",
+                "otp"
+              ]
+            },
+            "description": "Expected: 204. Open Mailpit at {{mailpit_url}} and copy the newest code into collection variable otp."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OTP request accepted (204)', function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. Verify OTP (email)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"token\": \"{{otp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/mobile/verify",
+              "path": [
+                "auth",
+                "mobile",
+                "verify"
+              ]
+            },
+            "description": "Expected: 200. Ensure email is exactly the address used for request OTP and otp is from the latest email."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OTP verified (200)', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) { const body = pm.response.json(); pm.collectionVariables.set('mobile_access_token', body.session.access_token); pm.collectionVariables.set('mobile_user_id', body.user_id); }",
+                  "if (pm.response.code === 200) { pm.environment.set('mobile_access_token', pm.response.json().session.access_token); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Mobile - Phone Test OTP",
+      "item": [
+        {
+          "name": "1. Request OTP (phone)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/mobile/otp",
+              "path": [
+                "auth",
+                "mobile",
+                "otp"
+              ]
+            },
+            "description": "For the local configured test number 0900000001; no SMS is sent. Expected: 204."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OTP request accepted (204)', function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. Verify OTP (phone test code)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"token\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/mobile/verify",
+              "path": [
+                "auth",
+                "mobile",
+                "verify"
+              ]
+            },
+            "description": "Local Supabase test_otp code is 123456 for phone 0900000001. Expected: 200."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OTP verified (200)', function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) { const body = pm.response.json(); pm.collectionVariables.set('mobile_access_token', body.session.access_token); pm.collectionVariables.set('mobile_user_id', body.user_id); }",
+                  "if (pm.response.code === 200) { pm.environment.set('mobile_access_token', pm.response.json().session.access_token); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin - Password Login",
+      "item": [
+        {
+          "name": "Login admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/admin/login",
+              "path": [
+                "auth",
+                "admin",
+                "login"
+              ]
+            },
+            "description": "Requires an existing local admin account. Expected: 200; wrong credentials: 401."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Admin login returns success or expected auth failure', function () { pm.expect([200, 401]).to.include(pm.response.code); });",
+                  "if (pm.response.code === 200) { pm.collectionVariables.set('admin_access_token', pm.response.json().session.access_token); }",
+                  "if (pm.response.code === 200) { pm.environment.set('admin_access_token', pm.response.json().session.access_token); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Identity",
+      "item": [
+        {
+          "name": "POST /auth/profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "profile"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ho_ten\": \"example\",\n  \"ngay_sinh\": \"1990-01-01\",\n  \"gioi_tinh\": \"example\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "description": "Complete Profile"
+        },
+        {
+          "name": "POST /auth/admin/session/refresh",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/admin/session/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "admin",
+                "session",
+                "refresh"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_token\": \"{{otp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "description": "Refresh Admin Session"
+        }
+      ]
+    },
+    {
+      "name": "Consent",
+      "item": [
+        {
+          "name": "GET /consents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/consents",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "consents"
+              ],
+              "query": []
+            }
+          },
+          "description": "List My Consents"
+        },
+        {
+          "name": "POST /consents",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/consents",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "consents"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"purpose\": \"health_data\",\n  \"document_version\": \"example\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "description": "Post Consent"
+        },
+        {
+          "name": "POST /consents/{purpose}/withdraw",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/consents/{purpose}/withdraw",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "consents",
+                "{purpose}",
+                "withdraw"
+              ],
+              "query": []
+            }
+          },
+          "description": "Post Withdraw Consent"
+        }
+      ]
+    },
+    {
+      "name": "Family",
+      "item": [
+        {
+          "name": "GET /family/link-code",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/family/link-code",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "family",
+                "link-code"
+              ],
+              "query": []
+            }
+          },
+          "description": "Get My Link Code"
+        }
+      ]
+    },
+    {
+      "name": "Access",
+      "item": [
+        {
+          "name": "GET /admin/access-logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/access-logs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "access-logs"
+              ],
+              "query": []
+            }
+          },
+          "description": "List Access Logs | Chưa hoàn thiện: handler hiện ném NotImplementedError."
+        }
+      ]
+    },
+    {
+      "name": "Catalog",
+      "item": [
+        {
+          "name": "GET /catalog/medications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/catalog/medications?q=example&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "catalog",
+                "medications"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "example",
+                  "description": "Chuỗi tìm; phải có ít nhất một ký tự không phải khoảng trắng."
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Số kết quả tối đa."
+                }
+              ]
+            }
+          },
+          "description": "Get Catalog Medications"
+        },
+        {
+          "name": "GET /admin/catalog/sync-runs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/catalog/sync-runs?source=example&status=example&limit=20&offset=0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "catalog",
+                "sync-runs"
+              ],
+              "query": [
+                {
+                  "key": "source",
+                  "value": "example",
+                  "description": ""
+                },
+                {
+                  "key": "status",
+                  "value": "example",
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": ""
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "description": "Get Catalog Sync Runs"
+        },
+        {
+          "name": "POST /admin/medications",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/medications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "medications"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"example\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "description": "Admin: Thêm thuốc mới vào danh mục"
+        },
+        {
+          "name": "GET /admin/medications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/medications?q=example&skip=0&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "medications"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "example",
+                  "description": "Từ khóa tìm kiếm theo tên"
+                },
+                {
+                  "key": "skip",
+                  "value": "0",
+                  "description": "Vị trí bắt đầu"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Số lượng bản ghi tối đa"
+                }
+              ]
+            }
+          },
+          "description": "Admin: Danh sách thuốc phân trang, hỗ trợ tìm kiếm"
+        },
+        {
+          "name": "GET /admin/medications/{med_id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/medications/{{med_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "medications",
+                "{{med_id}}"
+              ],
+              "query": []
+            }
+          },
+          "description": "Admin: Chi tiết một thuốc trong danh mục"
+        },
+        {
+          "name": "PATCH /admin/medications/{med_id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/medications/{{med_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "medications",
+                "{{med_id}}"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": null,\n  \"raw_active_ingredient\": null,\n  \"strength_text\": null,\n  \"dosage_form\": null,\n  \"manufacturer_name\": null,\n  \"manufacturer_country\": null,\n  \"packaging_spec\": null,\n  \"source\": null,\n  \"source_ref\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "description": "Admin: Cập nhật thông tin thuốc"
+        },
+        {
+          "name": "DELETE /admin/medications/{med_id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/medications/{{med_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "medications",
+                "{{med_id}}"
+              ],
+              "query": []
+            }
+          },
+          "description": "Admin: Xóa mềm thuốc (đặt deleted_at)"
+        },
+        {
+          "name": "GET /admin/active-ingredients",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/active-ingredients?q=example&medication_id=example&skip=0&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "active-ingredients"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "example",
+                  "description": ""
+                },
+                {
+                  "key": "medication_id",
+                  "value": "example",
+                  "description": ""
+                },
+                {
+                  "key": "skip",
+                  "value": "0",
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "description": "Admin: tra cứu hoạt chất trong danh mục"
+        }
+      ]
+    },
+    {
+      "name": "Interaction",
+      "item": [
+        {
+          "name": "POST /admin/drug-interactions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/drug-interactions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "drug-interactions"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ingredient_a_id\": 1,\n  \"interaction_type\": \"chong_chi_dinh\",\n  \"severity_level\": 1,\n  \"handling_type\": \"tranh_phoi_hop\",\n  \"description\": \"example\",\n  \"source\": \"example\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "description": "Admin: thêm quy tắc tương tác giữa hai hoạt chất"
+        },
+        {
+          "name": "GET /admin/drug-interactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/drug-interactions?q=example&ingredient_id=example&medication_id=example&interaction_type=example&severity_level=example&skip=0&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "drug-interactions"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "example",
+                  "description": ""
+                },
+                {
+                  "key": "ingredient_id",
+                  "value": "example",
+                  "description": ""
+                },
+                {
+                  "key": "medication_id",
+                  "value": "example",
+                  "description": ""
+                },
+                {
+                  "key": "interaction_type",
+                  "value": "example",
+                  "description": ""
+                },
+                {
+                  "key": "severity_level",
+                  "value": "example",
+                  "description": ""
+                },
+                {
+                  "key": "skip",
+                  "value": "0",
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "description": "Admin: danh sách quy tắc tương tác giữa hai hoạt chất"
+        },
+        {
+          "name": "GET /admin/drug-interactions/{id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/drug-interactions/{{id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "drug-interactions",
+                "{{id}}"
+              ],
+              "query": []
+            }
+          },
+          "description": "Admin: chi tiết quy tắc (phiên bản hiện hành)"
+        },
+        {
+          "name": "PATCH /admin/drug-interactions/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/drug-interactions/{{id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "drug-interactions",
+                "{{id}}"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expected_version\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "description": "Admin: sửa quy tắc (tạo phiên bản mới)"
+        },
+        {
+          "name": "DELETE /admin/drug-interactions/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/drug-interactions/{{id}}?expected_version=example",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "drug-interactions",
+                "{{id}}"
+              ],
+              "query": [
+                {
+                  "key": "expected_version",
+                  "value": "example",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "description": "Admin: xóa mềm quy tắc"
+        },
+        {
+          "name": "GET /admin/drug-interactions/{id}/versions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/drug-interactions/{{id}}/versions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "drug-interactions",
+                "{{id}}",
+                "versions"
+              ],
+              "query": []
+            }
+          },
+          "description": "Admin: lịch sử phiên bản của quy tắc"
+        },
+        {
+          "name": "GET /admin/drug-interaction-versions/{version_id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/drug-interaction-versions/{{version_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "drug-interaction-versions",
+                "{{version_id}}"
+              ],
+              "query": []
+            }
+          },
+          "description": "Admin: xem một phiên bản theo id phiên bản"
+        },
+        {
+          "name": "POST /admin/drug-food-interactions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/drug-food-interactions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "drug-food-interactions"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ingredient_id\": 1,\n  \"food_to_avoid\": \"example\",\n  \"severity_level\": 1,\n  \"reason\": \"example\",\n  \"source\": \"example\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "description": "Admin: thêm quy tắc tương tác hoạt chất–thực phẩm"
+        },
+        {
+          "name": "GET /admin/drug-food-interactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/drug-food-interactions?q=example&ingredient_id=example&medication_id=example&severity_level=example&skip=0&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "drug-food-interactions"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "example",
+                  "description": ""
+                },
+                {
+                  "key": "ingredient_id",
+                  "value": "example",
+                  "description": ""
+                },
+                {
+                  "key": "medication_id",
+                  "value": "example",
+                  "description": ""
+                },
+                {
+                  "key": "severity_level",
+                  "value": "example",
+                  "description": ""
+                },
+                {
+                  "key": "skip",
+                  "value": "0",
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "description": "Admin: danh sách quy tắc tương tác hoạt chất–thực phẩm"
+        },
+        {
+          "name": "GET /admin/drug-food-interactions/{id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/drug-food-interactions/{{id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "drug-food-interactions",
+                "{{id}}"
+              ],
+              "query": []
+            }
+          },
+          "description": "Admin: chi tiết quy tắc hoạt chất–thực phẩm"
+        },
+        {
+          "name": "PATCH /admin/drug-food-interactions/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/drug-food-interactions/{{id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "drug-food-interactions",
+                "{{id}}"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"expected_version\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "description": "Admin: sửa quy tắc hoạt chất–thực phẩm (tạo phiên bản mới)"
+        },
+        {
+          "name": "DELETE /admin/drug-food-interactions/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/drug-food-interactions/{{id}}?expected_version=example",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "drug-food-interactions",
+                "{{id}}"
+              ],
+              "query": [
+                {
+                  "key": "expected_version",
+                  "value": "example",
+                  "description": ""
+                }
+              ]
+            }
+          },
+          "description": "Admin: xóa mềm quy tắc hoạt chất–thực phẩm"
+        },
+        {
+          "name": "GET /admin/drug-food-interactions/{id}/versions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/drug-food-interactions/{{id}}/versions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "drug-food-interactions",
+                "{{id}}",
+                "versions"
+              ],
+              "query": []
+            }
+          },
+          "description": "Admin: lịch sử phiên bản của quy tắc hoạt chất–thực phẩm"
+        },
+        {
+          "name": "GET /admin/drug-food-interaction-versions/{version_id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/drug-food-interaction-versions/{{version_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "drug-food-interaction-versions",
+                "{{version_id}}"
+              ],
+              "query": []
+            }
+          },
+          "description": "Admin: xem một phiên bản quy tắc hoạt chất–thực phẩm"
+        }
+      ]
+    },
+    {
+      "name": "Medication",
+      "item": [
+        {
+          "name": "GET /medications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/medications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "medications"
+              ],
+              "query": []
+            }
+          },
+          "description": "Get User Medications"
+        },
+        {
+          "name": "POST /medications",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/medications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "medications"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_uuid\": \"{{patient_id}}\",\n  \"medication_id\": 1,\n  \"quantity_per_dose\": 1,\n  \"dosing_mode\": \"scheduled\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "description": "Post Medication"
+        },
+        {
+          "name": "GET /medications/{id}",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/medications/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "medications",
+                "{id}"
+              ],
+              "query": []
+            }
+          },
+          "description": "Get User Medication"
+        },
+        {
+          "name": "PATCH /medications/{id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/medications/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "medications",
+                "{id}"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity_per_dose\": 1,\n  \"dosing_mode\": \"scheduled\",\n  \"intake_times\": [\n    \"example\"\n  ],\n  \"days_of_week\": [\n    1\n  ],\n  \"max_doses_per_day\": 1,\n  \"intake_timing\": null,\n  \"stock_quantity\": null,\n  \"stopped\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "description": "Patch User Medication"
+        },
+        {
+          "name": "DELETE /medications/{id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/medications/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "medications",
+                "{id}"
+              ],
+              "query": []
+            }
+          },
+          "description": "Delete User Medication"
+        },
+        {
+          "name": "POST /medications/{id}/schedules",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/medications/{id}/schedules",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "medications",
+                "{id}",
+                "schedules"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"intake_time\": \"example\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "description": "Post Medication Schedule"
+        },
+        {
+          "name": "PATCH /medications/{id}/schedules/{schedule_id}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/medications/{id}/schedules/{{schedule_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "medications",
+                "{id}",
+                "schedules",
+                "{{schedule_id}}"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"intake_time\": \"example\",\n  \"reminder_enabled\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "description": "Patch Medication Schedule"
+        },
+        {
+          "name": "DELETE /medications/{id}/schedules/{schedule_id}",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/medications/{id}/schedules/{{schedule_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "medications",
+                "{id}",
+                "schedules",
+                "{{schedule_id}}"
+              ],
+              "query": []
+            }
+          },
+          "description": "Delete Medication Schedule"
+        },
+        {
+          "name": "GET /patients/{patient_id}/schedules",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patients/{{patient_id}}/schedules?limit=100&cursor=example",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patients",
+                "{{patient_id}}",
+                "schedules"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "100",
+                  "description": "Số lịch tối đa của trang."
+                },
+                {
+                  "key": "cursor",
+                  "value": "example",
+                  "description": "next_cursor trang trước."
+                }
+              ]
+            }
+          },
+          "description": "Get Patient Schedules"
+        }
+      ]
+    },
+    {
+      "name": "Adherence",
+      "item": [
+        {
+          "name": "POST /doses/batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{mobile_access_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/doses/batch",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "doses",
+                "batch"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"client_uuid\": \"{{patient_id}}\",\n    \"schedule_id\": 1,\n    \"scheduled_at\": \"2026-10-18T08:00:00+07:00\",\n    \"taken_at\": \"2026-10-18T08:00:00+07:00\"\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "description": "Post Doses"
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health/live",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health/live",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health",
+                "live"
+              ],
+              "query": []
+            }
+          },
+          "description": "Live"
+        },
+        {
+          "name": "GET /health/ready",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health/ready",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health",
+                "ready"
+              ],
+              "query": []
+            }
+          },
+          "description": "Ready"
+        }
+      ]
+    }
+  ]
+}
