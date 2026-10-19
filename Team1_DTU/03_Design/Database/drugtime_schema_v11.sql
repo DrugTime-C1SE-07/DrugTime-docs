@@ -238,6 +238,9 @@ CREATE TABLE data_deletion_requests (
 CREATE UNIQUE INDEX data_deletion_requests_one_open_idx ON data_deletion_requests (user_id) WHERE status IN ('cho_duyet', 'da_duyet');
 CREATE INDEX data_deletion_requests_status_idx ON data_deletion_requests (status, requested_at);
 
+-- Task 3.13 (migration 20261016083732_caregiver_links_reopenable_pairs): mỗi cặp có tối đa một
+-- dòng pending/active; bị từ chối hoặc bị hủy thì gửi lại tạo dòng mới, dòng cũ giữ làm lịch sử
+-- (QD-30, BS-04). client_uuid: khóa chống gửi trùng của POST /family/link-requests.
 CREATE TABLE caregiver_links (
     id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     patient_user_id uuid NOT NULL REFERENCES users (id),
@@ -246,13 +249,32 @@ CREATE TABLE caregiver_links (
     sharing_enabled boolean NOT NULL DEFAULT false,
     linked_at timestamptz NOT NULL DEFAULT now(),
     revoked_at timestamptz,
-    UNIQUE (patient_user_id, family_user_id),
+    client_uuid uuid,
     CHECK (patient_user_id <> family_user_id),
     CHECK ((status = 'revoked') = (revoked_at IS NOT NULL))
 );
 
 CREATE INDEX caregiver_links_family_idx ON caregiver_links (family_user_id, status);
 CREATE INDEX caregiver_links_patient_idx ON caregiver_links (patient_user_id, status);
+CREATE UNIQUE INDEX caregiver_links_one_open_pair_idx ON caregiver_links (patient_user_id, family_user_id) WHERE status IN ('pending', 'active');
+CREATE INDEX caregiver_links_pair_idx ON caregiver_links (patient_user_id, family_user_id);
+CREATE INDEX caregiver_links_family_linked_at_idx ON caregiver_links (family_user_id, linked_at);
+CREATE UNIQUE INDEX caregiver_links_family_client_uuid_idx ON caregiver_links (family_user_id, client_uuid) WHERE client_uuid IS NOT NULL;
+
+-- Task 3.13 (migration 20261016083734_link_request_attempts): lượt nhập sai mã liên kết theo
+-- tài khoản người gửi (QD-34 (c)). Không lưu mã đã thử. account_locked_until ghi quyết định khóa
+-- sinh ra từ lượt đó, nên API chỉ cần SELECT/INSERT.
+CREATE TABLE link_request_attempts (
+    id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    family_user_id uuid NOT NULL REFERENCES users (id),
+    client_uuid uuid NOT NULL,
+    attempted_at timestamptz NOT NULL DEFAULT now(),
+    account_locked_until timestamptz,
+    CONSTRAINT link_request_attempts_family_client_uuid_key UNIQUE (family_user_id, client_uuid),
+    CONSTRAINT link_request_attempts_locked_after_attempt_check CHECK (account_locked_until IS NULL OR account_locked_until > attempted_at)
+);
+
+CREATE INDEX link_request_attempts_family_time_idx ON link_request_attempts (family_user_id, attempted_at);
 
 -- QD-04: mỗi user đúng một mã liên kết cố định, không hết hạn, không đổi (task 3.10,
 -- migration 20261013040307_link_codes_one_fixed_code_per_user). Nhập mã chỉ tạo yêu cầu liên kết.
@@ -519,6 +541,9 @@ GRANT SELECT, UPDATE, DELETE ON caregiver_links TO worker_role;
 -- link_codes: API đọc/tạo mã; Worker đọc/xóa khi xóa dữ liệu người dùng (task 3.10).
 GRANT SELECT, INSERT ON link_codes TO api_role;
 GRANT SELECT, DELETE ON link_codes TO worker_role;
+-- link_request_attempts: API đọc/ghi lượt sai; Worker đọc/xóa khi xóa dữ liệu người dùng (task 3.13).
+GRANT SELECT, INSERT ON link_request_attempts TO api_role;
+GRANT SELECT, DELETE ON link_request_attempts TO worker_role;
 
 GRANT SELECT, INSERT ON access_logs TO api_role;
 
