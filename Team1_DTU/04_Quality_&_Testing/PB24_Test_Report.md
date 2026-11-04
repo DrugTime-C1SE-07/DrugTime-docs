@@ -24,9 +24,11 @@ Báo cáo này tổng hợp kết quả thực thi kiểm thử toàn diện thu
 > [!IMPORTANT]
 > **Tuân thủ quy định bảo vệ an toàn cơ sở dữ liệu và đạo đức lâm sàng:**
 > - **Tuyệt đối không kết nối DB Dev dùng chung hoặc Production:** Toàn bộ kiểm thử được thực hiện trên môi trường test cô lập, in-memory fixtures và mocks.
-> - **Chưa thực hiện E2E Database vật lý:** Dự án chưa thiết lập môi trường test harness PostgreSQL cô lập riêng biệt. Do đó, các bài test API được thực hiện qua FastAPI `TestClient` với mock adapters; không giả định đây là kết quả kiểm thử E2E qua đường truyền mạng vật lý tới PostgreSQL thật.
+> - **Chưa thực hiện Live DB E2E:** Dự án chưa thiết lập môi trường test harness PostgreSQL cô lập riêng biệt. Do đó, các bài test API được thực hiện qua FastAPI `TestClient` với mock adapters; không đánh đồng với kiểm thử tích hợp Live DB thật.
+> - **Chưa kiểm thử trên thiết bị di động vật lý:** Toàn bộ 13 bài test Flutter được thực hiện trên headless widget/flow test runner, chưa chạy trên thiết bị iOS/Android vật lý.
 > - **Phân tách rạch ròi giữa Lâm sàng và Kỹ thuật:**
->   - 10 ca tương tác ĐTĐ (`TC-POS-01`..`10`) và 5 ca candidate âm tính (`TC-NEG-01`..`05`) được gắn nhãn `provisional`. Kết quả test chỉ chứng minh **draft-conformance kỹ thuật** với tập quy tắc dự thảo từ Task 4.01, **không tuyên bố độ chính xác y khoa (True Positive/False Positive lâm sàng)** khi chưa có chữ ký số/attestation từ Dược sĩ có thẩm quyền.
+>   - 10 ca tương tác ĐTĐ (`TC-POS-01`..`10`) và 5 ca candidate âm tính (`TC-NEG-01`..`05`) được gắn nhãn `provisional`. Toàn bộ dữ liệu lâm sàng giữ nguyên trạng thái `pending_review` (chưa có chữ ký Dược sĩ lâm sàng); kết quả test chỉ chứng minh **draft-conformance kỹ thuật** với tập quy tắc dự thảo, **không tuyên bố độ chính xác y khoa (True Positive/False Positive lâm sàng)**.
+>   - 17 hoạt chất OTC (vai trò `trieu_chung_cap_tinh`) đã được chuyển sang thư mục `markdown/OTC_Phase2/` và loại khỏi deliverable PB24 đợt này, bảo lưu hồ sơ chứng cứ cho Phase 2.
 >   - 12 ca kỹ thuật (`synthetic`) sử dụng 100% định danh nhân tạo thuần túy để kiểm chứng cơ chế logic phần mềm, không đại diện cho tương tác lâm sàng.
 
 ---
@@ -56,6 +58,18 @@ Báo cáo này tổng hợp kết quả thực thi kiểm thử toàn diện thu
 #### Phân rã 13 test cases mobile:
 - `frontend/mobile/test/features/interaction_check/interaction_check_test.dart` (trong workspace mobile): **8 tests** (kiểm thử mapper JSON, khởi tạo thực thể, in-memory repository stub và widget cảnh báo mức độ).
 - `frontend/mobile/test/features/interaction_check/interaction_flow_test.dart` (trong workspace mobile): **5 tests** (kiểm thử luồng thêm thuốc: có tương tác, phản hồi mock noneFound, thiếu hoạt chất, phản hồi hỗn hợp, xử lý lỗi mạng).
+
+### 2.3. Đối Soát Giữa Kiểm Thử Cục Bộ (Local) Và GitHub CI Checks
+
+Nhằm bảo đảm tính khách quan và minh bạch kỹ thuật, tình trạng kiểm thử cục bộ và trạng thái CI trên GitHub của 5 Draft Pull Requests được đối chiếu chi tiết như sau:
+
+| Kho Lưu Trữ (Repo) | Draft PR | Kiểm Thử Cục Bộ (Local Runner) | Trạng Thái GitHub CI Checks | Đánh Giá Tích Hợp |
+|---|:---:|:---:|:---:|---|
+| **Superproject (`DrugTime`)** | [PR #51](https://github.com/DrugTime-C1SE-07/DrugTime/pull/51) | Submodule pointer validation đạt chuẩn | `agents`: **PASS (7s)** | Workflow kiểm tra cấu trúc submodule và agents hoàn tất thành công |
+| **`DrugTime-api_contract`** | [PR #17](https://github.com/DrugTime-C1SE-07/DrugTime-api_contract/pull/17) | JSON Schema validation đạt 100% | **Không có checks báo cáo** (`no checks reported`) | Repository chưa cấu hình workflow CI tự động cho nhánh này |
+| **`DrugTime-backend`** | [PR #45](https://github.com/DrugTime-C1SE-07/DrugTime-backend/pull/45) | 70/70 tests pass (6.68s), Ruff check 0 lỗi | **Không có checks báo cáo** (`no checks reported`) | Repository chưa cấu hình workflow CI tự động cho nhánh này |
+| **`DrugTime-frontend`** | [PR #55](https://github.com/DrugTime-C1SE-07/DrugTime-frontend/pull/55) | 13/13 tests pass (4.1s), analyze 0 lỗi | `build-and-test`: **FAIL**<br>Vercel: **PASS** | 13/13 tests module PB24 `interaction_check` đều pass; 5 bài test fail trên CI thuộc về module `family_link` và `app_shell` có sẵn từ trước trên `main` |
+| **`DrugTime-docs`** | [PR #28](https://github.com/DrugTime-C1SE-07/DrugTime-docs/pull/28) | Markdown format & link relative đạt 100% | **Không có checks báo cáo** (`no checks reported`) | Repository chưa cấu hình workflow CI tự động cho nhánh này |
 
 ---
 
