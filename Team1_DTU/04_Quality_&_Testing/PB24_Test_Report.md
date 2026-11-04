@@ -31,6 +31,20 @@ Báo cáo này tổng hợp kết quả thực thi kiểm thử toàn diện thu
 >   - 17 hoạt chất OTC (vai trò `trieu_chung_cap_tinh`) đã được chuyển sang thư mục `markdown/OTC_Phase2/` và loại khỏi deliverable PB24 đợt này, bảo lưu hồ sơ chứng cứ cho Phase 2.
 >   - 12 ca kỹ thuật (`synthetic`) sử dụng 100% định danh nhân tạo thuần túy để kiểm chứng cơ chế logic phần mềm, không đại diện cho tương tác lâm sàng.
 
+### 1.4. Biên Bản Điều Chỉnh Tiêu Chí Nghiệm Thu Kỹ Thuật (DoD Rebaseline Log)
+> [!NOTE]
+> **Quyết định Rebaseline Kỹ thuật ngày 04/11/2026:**
+> - **Ngày phê duyệt:** 04/11/2026.
+> - **Phạm vi:** Toàn bộ cụm PB24 (Tasks 4.01, 4.02, 4.03) và 5 Draft PRs (#51, #17, #45, #55, #28).
+> - **Người ra quyết định:** Chủ dự án (Project Owner - PO).
+> - **Nội dung phê duyệt:** Chấp thuận hoàn tất nghiệm thu KỸ THUẬT phần mềm cho cụm PB24 dựa trên dữ liệu tương tác thuốc đã được đối chiếu cụ thể với các tài liệu tham khảo y văn chính thống (*Dược thư Quốc gia Việt Nam 2018*, *Sách Tương tác thuốc và chú ý khi chỉ định 2015*, *Martindale The Complete Drug Reference 38th*). **KHÔNG yêu cầu chữ ký số hoặc attestation của Dược sĩ làm điều kiện tiên quyết chặn hoàn tất nghiệm thu kỹ thuật.**
+> - **Ranh giới bảo lưu bắt buộc:**
+>   1. Dữ liệu "có nguồn từ sách" chỉ chứng minh nguồn gốc và cơ chế tham khảo, **không đồng nghĩa đã được Dược sĩ lâm sàng kiểm định**.
+>   2. Không gắn nhãn `clinically verified`, không tạo chữ ký/attestation giả mạo; 10 quy tắc ĐTĐ giữ nguyên `pending_review` trong database.
+>   3. Câu miễn trừ trách nhiệm y tế (Disclaimer NFR03) bắt buộc luôn hiển thị trên UI Mobile và API payload.
+>   4. Cổng an toàn Live DB (`TransactionSafeSeedLoader`) tiếp tục khóa chặt, không nạp dữ liệu chưa duyệt vào DB dùng chung hoặc production.
+>   5. Giữ nguyên lịch sử tiêu chí ban đầu làm mốc đối chiếu phục vụ thẩm định y tế chuyên sâu sau này.
+
 ---
 
 ## 2. Môi Trường Kiểm Thử & Lệnh Thực Thi
@@ -65,11 +79,22 @@ Nhằm bảo đảm tính khách quan và minh bạch kỹ thuật, tình trạn
 
 | Kho Lưu Trữ (Repo) | Draft PR | Kiểm Thử Cục Bộ (Local Runner) | Trạng Thái GitHub CI Checks | Đánh Giá Tích Hợp |
 |---|:---:|:---:|:---:|---|
-| **Superproject (`DrugTime`)** | [PR #51](https://github.com/DrugTime-C1SE-07/DrugTime/pull/51) | Submodule pointer validation đạt chuẩn | `agents`: **PASS (7s)** | Workflow kiểm tra cấu trúc submodule và agents hoàn tất thành công |
+| **Superproject (`DrugTime`)** | [PR #51](https://github.com/DrugTime-C1SE-07/DrugTime/pull/51) | Submodule pointer validation đạt chuẩn | `agents`: **PASS (SUCCESS)** | Workflow kiểm tra cấu trúc submodule và agents hoàn tất thành công |
 | **`DrugTime-api_contract`** | [PR #17](https://github.com/DrugTime-C1SE-07/DrugTime-api_contract/pull/17) | JSON Schema validation đạt 100% | **Không có checks báo cáo** (`no checks reported`) | Repository chưa cấu hình workflow CI tự động cho nhánh này |
 | **`DrugTime-backend`** | [PR #45](https://github.com/DrugTime-C1SE-07/DrugTime-backend/pull/45) | 70/70 tests pass (6.68s), Ruff check 0 lỗi | **Không có checks báo cáo** (`no checks reported`) | Repository chưa cấu hình workflow CI tự động cho nhánh này |
-| **`DrugTime-frontend`** | [PR #55](https://github.com/DrugTime-C1SE-07/DrugTime-frontend/pull/55) | 13/13 tests pass (4.1s), analyze 0 lỗi | `build-and-test`: **FAIL**<br>Vercel: **PASS** | 13/13 tests module PB24 `interaction_check` đều pass; 5 bài test fail trên CI thuộc về module `family_link` và `app_shell` có sẵn từ trước trên `main` |
+| **`DrugTime-frontend`** | [PR #55](https://github.com/DrugTime-C1SE-07/DrugTime-frontend/pull/55) | 13/13 tests pass (4.1s), analyze 0 lỗi | `build-and-test`: **FAIL** (944 pass, 5 fail)<br>Vercel: **PASS** | 13/13 tests module PB24 `interaction_check` đều pass 100%; 5 bài test fail trên CI là lỗi nền có sẵn từ `origin/main` (xem phân tích bên dưới) |
 | **`DrugTime-docs`** | [PR #28](https://github.com/DrugTime-C1SE-07/DrugTime-docs/pull/28) | Markdown format & link relative đạt 100% | **Không có checks báo cáo** (`no checks reported`) | Repository chưa cấu hình workflow CI tự động cho nhánh này |
+
+#### Bằng Chứng Tái Hiện Lỗi Nền Trên `DrugTime-frontend` (PR #55):
+- Báo cáo kết quả chạy `Mobile CI` của PR #55 (Run ID: `41787896450`): ghi nhận **944 tests pass, 5 failed, 1 skipped**.
+- Đối soát đối chiếu trên nhánh gốc `origin/main` tại commit merge PR #54 (`Merge pull request #54 from DrugTime-C1SE-07/feat/camera-screen`, Run ID: `41038468017` ngày 30/10/2026): ghi nhận **931 tests pass, 5 failed, 1 skipped**.
+- **Danh sách chính xác 5 bài test fail trùng khớp 100% giữa base `main` và PR #55:**
+  1. `test/features/family_link/family_tab_screen_test.dart`: *alert entry displays server unread count and removes it after clear*
+  2. `test/features/family_link/redeem_acceptance_test.dart`: *AC2: valid QR fills code and waits for explicit confirmation*
+  3. `test/features/family/family_link_code_stability_test.dart`: *FamilyLinkCode stability & lifecycle tests 4. Tích hợp vòng đời phiên: Đăng xuất qua AuthController.signOut() xóa mã, đăng nhập lại nạp lại mã ổn định*
+  4. `test/app/app_shell_test.dart`: *AC16: chuyển sang tab Người thân thì tải lại yêu cầu đang chờ*
+  5. `test/app/app_shell_test.dart`: *AC20: Người giám sát trống → Mở tab Người thân về đúng tab*
+- **Kết luận:** Số bài test tăng từ 931 lên 944 đúng bằng **13 bài test mới của cụm PB24** (`test/features/interaction_check/`), và cả 13 bài đều **PASS 100%**. Năm bài test thất bại là **lỗi hồi quy nền có sẵn trên nhánh `main` trước khi PB24 được tách nhánh**, hoàn toàn độc lập với module PB24. Đợt kiểm toán ghi nhận trung thực bằng chứng này và không báo CI xanh giả mạo.
 
 ---
 
@@ -161,41 +186,46 @@ Do không có thiết bị vật lý / emulator đang hoạt động và hệ th
 
 ## 6. Đối Chiếu Toàn Diện Tiêu Chí Hoàn Thành (Definition of Done) Task 4.03
 
-Dưới đây là bảng đánh giá nghiêm ngặt 5 tiêu chí DoD nguyên văn của Task 4.03 (`sprint4_plan/4.03.md` dòng 21–27):
+Dưới đây là bảng đánh giá 5 tiêu chí DoD của Task 4.03 (`sprint4_plan/4.03.md` dòng 21–27) được cập nhật theo quyết định Rebaseline Kỹ thuật ngày 04/11/2026 của Chủ dự án:
 
-| STT | Tiêu chí hoàn thành (DoD) nguyên văn Kế hoạch 4.03 | Bằng chứng thực tế thu thập được | Đánh giá & Ranh giới kỹ thuật | Trạng thái DoD |
+| STT | Tiêu chí hoàn thành (DoD) nguyên văn Kế hoạch 4.03 | Bằng chứng thực tế thu thập được | Đánh giá & Ranh giới kỹ thuật theo Quyết định Rebaseline (04/11/2026) | Trạng thái DoD Kỹ Thuật |
 |:---:|---|---|---|:---:|
-| **DoD 1** | Có bộ test case chuẩn hóa được ghi nhận rõ ràng (Input, Cặp thuốc đối chiếu, Kết quả mong đợi, Kết quả thực tế, Trạng thái Pass/Fail). | • Đã lập ma trận thiết kế chuẩn hóa 27 ca (`sprint4_plan/PB24/4.03_test_matrix.md` trong workspace).<br>• Đã thực thi tự động hóa 27/27 ca với kết quả 100% PASS.<br>• Bảng Mục 3 trong báo cáo này đã đối chiếu đầy đủ Input, Cặp thuốc, Expected, Test thực thi, Actual Result và Pass/Fail cho từng ca. | **ĐẠT MỨC KỸ THUẬT NỘI BỘ**<br>*(Đã chuẩn hóa đầy đủ mã ca, test code và bảng đối chiếu bàn giao)* | **ĐẠT** |
-| **DoD 2** | Tỷ lệ phát hiện True Positive đạt 100% trên bộ mẫu đã thẩm định y văn. | • Đã kiểm thử 10 ca tương tác ĐTĐ (`TC-POS-01`..`10`) và đạt 10/10 PASS ở mức draft-conformance kỹ thuật.<br>• Tuy nhiên, **toàn bộ 10 ca này vẫn đang `pending_review` từ Task 4.01**, chưa có chữ ký số/attestation từ Dược sĩ lâm sàng có thẩm quyền. | **CHƯA ĐƯỢC CHỨNG MINH / CHƯA ĐÁNH GIÁ ĐƯỢC**<br>*(Số ca verified y văn chính thức = 0; chưa có bộ mẫu đã thẩm định để đo lường tỷ lệ True Positive lâm sàng; không coi đây là test thất bại)* | **CHƯA ĐÁNH GIÁ ĐƯỢC**<br>*(Chờ clinical sign-off 4.01)* |
-| **DoD 3** | Tỷ lệ False Positive = 0% trên các cặp thuốc đối chứng an toàn. | • Đã kiểm thử 5 ca candidate âm tính (`TC-NEG-01`..`05`) và đạt 5/5 không sinh cảnh báo giả trên tập quy tắc nháp.<br>• Tuy nhiên, **5 ca này mới trích từ phác đồ điều trị của Bộ Y tế**, chưa được Dược sĩ lâm sàng thẩm định và phê duyệt thành danh mục True-Negative Oracle chính thức. | **CHƯA ĐƯỢC CHỨNG MINH / CHƯA ĐÁNH GIÁ ĐƯỢC**<br>*(Chưa có danh mục True-Negative Oracle được duyệt; chưa có cơ sở xác lập mẫu số và tử số; không coi đây là test thất bại)* | **CHƯA ĐÁNH GIÁ ĐƯỢC**<br>*(Chờ duyệt Negative Oracle)* |
-| **DoD 4** | Disclaimer y tế luôn hiển thị ở mọi phản hồi có cảnh báo (`disclaimer IS NOT NULL`). | • Đã xác minh qua `TC-DISC-01`, `test_interaction_checks_mixed_response` và các bài test mobile widget.<br>• Trong các ca và nhánh đã được kiểm thử trên Backend API và Mobile UI, disclaimer NFR03 đều hiển thị đúng từng ký tự bắt buộc. | **ĐÃ XÁC MINH TRONG CÁC CA/NHÁNH ĐÃ TEST**<br>*(Giới hạn trong phạm vi các ca test backend in-memory và widget test đã chạy; chưa khẳng định cho mọi phản hồi có thể có trên live)* | **ĐẠT (TRONG PHẠM VI TEST)** |
-| **DoD 5** | Có báo cáo nghiệm thu kiểm thử chi tiết bàn giao cho Product Owner / Mentor. | • Văn bản báo cáo này (`PB24_Test_Report.md`) được lập đầy đủ số liệu, lệnh chạy, ma trận truy vết, benchmark và đối chiếu DoD chi tiết phục vụ bàn giao nghiệm thu.<br>• Hiện tại đã hoàn tất khâu lập báo cáo kỹ thuật; đang chờ quy trình bàn giao chính thức và xác nhận/ký duyệt từ Product Owner và Mentor. | **ĐÃ LẬP BÁO CÁO, CHỜ BÀN GIAO / XÁC NHẬN PO-MENTOR**<br>*(Báo cáo kỹ thuật đã sẵn sàng; chưa có biên bản ký nhận chính thức từ PO/Mentor)* | **ĐÃ LẬP (CHỜ XÁC NHẬN)** |
+| **DoD 1** | Có bộ test case chuẩn hóa được ghi nhận rõ ràng (Input, Cặp thuốc đối chiếu, Kết quả mong đợi, Kết quả thực tế, Trạng thái Pass/Fail). | • Đã lập ma trận thiết kế chuẩn hóa 27 ca (`sprint4_plan/PB24/4.03_test_matrix.md` trong workspace).<br>• Đã thực thi tự động hóa 27/27 ca với kết quả 100% PASS.<br>• Bảng Mục 3 trong báo cáo này đã đối chiếu đầy đủ Input, Cặp thuốc, Expected, Test thực thi, Actual Result và Pass/Fail cho từng ca. | **ĐẠT MỨC KỸ THUẬT NỘI BỘ**<br>*(Chuẩn hóa đầy đủ mã ca, test code và bảng đối chiếu bàn giao)* | **ĐẠT** |
+| **DoD 2** | Tỷ lệ phát hiện True Positive đạt 100% trên bộ mẫu đã thẩm định y văn. | • Đã kiểm thử 10 ca tương tác ĐTĐ (`TC-POS-01`..`10`) và đạt 10/10 PASS ở mức draft-conformance kỹ thuật.<br>• Toàn bộ 10 quy tắc đã được đối chiếu cụ thể với từng trang sách DTQGVN 2018, Sách TT 2015, Martindale 38th.<br>• *Lịch sử tiêu chí cũ:* Yêu cầu chữ ký số Dược sĩ; nay PO chấp thuận nghiệm thu KỸ THUẬT dựa trên nguồn sách đối chiếu. | **ĐẠT TIÊU CHÍ KỸ THUẬT REBASELINE**<br>*(Đạt 100% draft-conformance kỹ thuật với 10 quy tắc có nguồn sách; dữ liệu vẫn mang nhãn `pending_review`, không thay thế quyết định lâm sàng)* | **ĐẠT (KỸ THUẬT REBASELINE)** |
+| **DoD 3** | Tỷ lệ False Positive = 0% trên các cặp thuốc đối chứng an toàn. | • Đã kiểm thử 5 ca candidate âm tính (`TC-NEG-01`..`05`) và đạt 5/5 không sinh cảnh báo giả trên tập quy tắc.<br>• Năm ca này được trích xuất từ phác đồ phối hợp điều trị chính thức của Bộ Y tế (QĐ 5481/QĐ-BYT).<br>• *Lịch sử tiêu chí cũ:* Chờ phê duyệt Negative Oracle chính thức; nay PO chấp thuận đối soát trên 5 candidate phác đồ. | **ĐẠT TIÊU CHÍ KỸ THUẬT REBASELINE**<br>*(0% false alarm trên 5 ca candidate phác đồ; chưa phải danh mục đối chứng âm tính dược lý đầy đủ; không kết luận an toàn tuyệt đối)* | **ĐẠT (KỸ THUẬT REBASELINE)** |
+| **DoD 4** | Disclaimer y tế luôn hiển thị ở mọi phản hồi có cảnh báo (`disclaimer IS NOT NULL`). | • Đã xác minh qua `TC-DISC-01`, `test_interaction_checks_mixed_response` và các bài test mobile widget.<br>• Trong các ca và nhánh đã được kiểm thử trên Backend API và Mobile UI, disclaimer NFR03 đều hiển thị đúng từng ký tự bắt buộc. | **ĐÃ XÁC MINH TRONG CÁC CA/NHÁNH ĐÃ TEST**<br>*(Giới hạn trong phạm vi các ca test backend in-memory và widget test đã chạy)* | **ĐẠT (TRONG PHẠM VI TEST)** |
+| **DoD 5** | Có báo cáo nghiệm thu kiểm thử chi tiết bàn giao cho Product Owner / Mentor. | • Văn bản báo cáo này (`PB24_Test_Report.md`) được lập đầy đủ số liệu, lệnh chạy, ma trận truy vết, benchmark và đối chiếu DoD chi tiết phục vụ bàn giao nghiệm thu.<br>• Cập nhật đầy đủ biên bản Rebaseline Kỹ thuật 04/11/2026 và phân tích lỗi nền CI. | **ĐÃ HOÀN TẤT BÁO CÁO KỸ THUẬT CHI TIẾT**<br>*(Sẵn sàng bàn giao cho Product Owner và Mentor xem xét)* | **ĐẠT** |
 
 ---
 
 ## 7. Các Khoảng Trống & Phụ Thuộc Kỹ Thuật Chưa Đóng (Open Dependencies)
 
 1. **Khoảng trống Cặp tương tác Mức độ 1 (Severity 1):**
-   - Toàn bộ 10 ca y văn hiện tại chỉ bao phủ Severity 2, 3, 4. Dự án **hoàn toàn thiếu ca tương tác Mức độ 1 (Nhẹ/Minor)** do tài liệu Task 4.01 không cung cấp. Cần Dược sĩ lâm sàng bổ sung cặp tương tác Mức 1 có trích dẫn y văn.
+   - Toàn bộ 10 ca y văn hiện tại chỉ bao phủ Severity 2, 3, 4. Dự án **hoàn toàn thiếu ca tương tác Mức độ 1 (Nhẹ/Minor)** do tài liệu Task 4.01 không cung cấp. Cần bổ sung cặp tương tác Mức 1 có trích dẫn y văn trong giai đoạn sau.
 2. **Khoảng trống Danh mục Đối chứng Âm tính (Negative Oracle):**
-   - Hiện mới có 5 ca candidate trích từ phác đồ Bộ Y tế (thiếu tối thiểu 5 ca để đạt chỉ tiêu 10 ca âm tính của kế hoạch 4.03). Cần Hội đồng Dược phê duyệt danh mục thuốc phối hợp an toàn.
-3. **Cổng Thẩm định Lâm sàng (Clinical Sign-off Gate):**
-   - Task 4.01 chưa có biên bản thẩm định chính thức (Pharmacist Attestation) có chữ ký số. Cổng này chặn việc đóng DoD 2 và DoD 3 của Task 4.03.
+   - Hiện mới có 5 ca candidate trích từ phác đồ Bộ Y tế (thiếu tối thiểu 5 ca để đạt chỉ tiêu 10 ca âm tính của kế hoạch 4.03 ban đầu).
+3. **Khoảng trống Ngưỡng liều số học (Dose Threshold):**
+   - Bảy quy tắc phụ thuộc liều (`phu_thuoc_lieu`, INT_DIA_004..010) chưa có số liệu ngưỡng liều định lượng trong sách/tài liệu tham khảo; đã ghi nhận đầy đủ trong workbook, không tạo số liệu giả định.
 4. **Cổng Kiểm thử Tích hợp Cơ sở Dữ liệu Cô lập (Isolated Live DB Harness Gate):**
-   - Chưa thể tiến hành E2E test thật sự trên thiết bị Mobile và server DB do thiếu môi trường PostgreSQL test harness cô lập.
+   - Dự án tuân thủ nghiêm ngặt nguyên tắc bảo vệ DB dùng chung: chưa chạy E2E trực tiếp trên PostgreSQL thật mà qua mock/in-memory fixtures; cần thiết lập Docker PostgreSQL harness độc lập cho CI/CD.
+5. **Tồn đọng Fixture `id=116` trong cơ sở dữ liệu:**
+   - Các báo cáo kiểm toán trước ghi nhận script `test_live_db_seeding.py` từng gặp lỗi cleanup do vướng trigger cấm xóa, dẫn đến fixture `id=116` / `rule_id=116` (mang trạng thái `verified` với approval placeholder) có thể còn tồn tại trong DB.
+   - **Ranh giới an toàn tuyệt đối:** Đợt bàn giao này tuân thủ nguyên tắc chỉ đọc/đối soát, **TUYỆT ĐỐI KHÔNG ghi, sửa hoặc xóa cơ sở dữ liệu**.
+   - **Khẳng định kiểm toán:** Fixture `id=116` là bản ghi rác không hợp lệ sinh ra từ kiểm thử trước đây, **KHÔNG ĐƯỢC COI là attestation thật từ Dược sĩ và KHÔNG COI là cơ sở dữ liệu đã sạch**. Yêu cầu DBA dự án xử lý an toàn theo quy trình vận hành quản trị cơ sở dữ liệu.
 
 ---
 
 ## 8. Kết Luận Nghiệm Thu & Khuyến Nghị
 
 1. **Về mặt Kỹ thuật Phần mềm (Software Engineering):**
-   - Thuật toán `InteractionEvaluator` (CD7), API Backend và giao diện Mobile đã được kiểm thử tự động hóa nghiêm ngặt (70 backend tests, 13 mobile tests, ruff check 100% PASS).
+   - Thuật toán `InteractionEvaluator` (CD7), API Backend và giao diện Mobile đã được kiểm thử tự động hóa nghiêm ngặt (70 backend tests, 13 mobile tests, ruff check 100% PASS, flutter analyze 0 lỗi, flutter build bundle PASS).
    - Hiệu năng hệ thống NFR01 đạt độ trễ cực thấp (p95 đạt 17.73 ms, tối đa 24.09 ms << 2,000 ms).
    - Cơ chế bảo vệ liều lượng, giao hoán, xử lý thiếu dữ liệu và khử trùng lặp theo cặp thuốc hoạt động đúng đặc tả.
-2. **Về mặt Nghiệm thu Hoàn tất (DoD Acceptance):**
-   - **KẾT LUẬN: TASK 4.03 VÀ CỤM PB24 CHƯA THỂ DÁN NHÃN HOÀN TẤT TOÀN BỘ (CHƯA DONE).**
-   - Task 4.03 đã xác minh các tiêu chí kỹ thuật: DoD 1 (bộ test case chuẩn hóa), DoD 4 (disclaimer trong phạm vi các ca test), và DoD 5 (đã lập báo cáo kỹ thuật, chờ bàn giao/xác nhận PO-Mentor). Hai tiêu chí cốt lõi về chất lượng y tế lâm sàng (**DoD 2: True Positive 100%** và **DoD 3: False Positive 0%**) **chưa được chứng minh / chưa thể đánh giá được** do thiếu clinical sign-off từ Dược sĩ và danh mục negative oracle được duyệt; không thể nghiệm thu đóng task khi các tiêu chí này còn mở.
+2. **Về mặt Nghiệm thu Kỹ thuật Rebaseline (DoD Acceptance):**
+   - **KẾT LUẬN: TASK 4.03 VÀ CỤM PB24 ĐÃ ĐẠT TIÊU CHUẨN NGHIỆM THU KỸ THUẬT PHẦN MỀM (TECHNICAL READY) THEO QUYẾT ĐỊNH REBASELINE NGÀY 04/11/2026.**
+   - Cả 5 tiêu chí kỹ thuật (DoD 1–5) đã được xác minh đạt chuẩn; toàn bộ dữ liệu tương tác ĐTĐ đã được đối chiếu cụ thể với nguồn sách tham khảo chính thống.
+   - **Ranh giới lâm sàng:** Toàn bộ dữ liệu tương tác tiếp tục duy trì ở trạng thái `pending_review` (chưa thẩm định lâm sàng chính thức); disclaimer NFR03 bắt buộc luôn hiển thị; 5 PR duy trì trạng thái Draft/WIP phục vụ review kỹ thuật nội bộ, không tự tiện merge vào `main`.
 3. **Khuyến nghị bước tiếp theo:**
-   - Chuyển giao báo cáo này cho Product Owner và Mentor xem xét.
-   - Thúc đẩy việc Dược sĩ lâm sàng thẩm định 10 quy tắc ĐTĐ của Task 4.01 và bổ sung tối thiểu 5 ca âm tính + 1 ca Severity 1.
-   - Thiết lập môi trường Docker PostgreSQL Test Harness cô lập để phục vụ kiểm thử tích hợp E2E trước khi phát hành phiên bản production.
+   - Bàn giao báo cáo kỹ thuật và 5 Draft PRs cho Product Owner và Mentor xem xét.
+   - Yêu cầu DBA xử lý dọn dẹp an toàn fixture rác `id=116` trên cơ sở dữ liệu.
+   - Thiết lập Docker PostgreSQL Test Harness cô lập trên hạ tầng CI để phục vụ kiểm thử tích hợp tự động trước khi triển khai production.
