@@ -24,27 +24,28 @@ Báo cáo này tổng hợp kết quả thực thi kiểm thử toàn diện thu
 > [!IMPORTANT]
 > **Tuân thủ quy định bảo vệ an toàn cơ sở dữ liệu và đạo đức lâm sàng:**
 > - **Tuyệt đối không kết nối DB Dev dùng chung hoặc Production:** Toàn bộ kiểm thử được thực hiện trên môi trường test cô lập, in-memory fixtures và mocks.
-> - **Chưa thực hiện Live DB E2E:** Dự án chưa thiết lập môi trường test harness PostgreSQL cô lập riêng biệt. Do đó, các bài test API được thực hiện qua FastAPI `TestClient` với mock adapters; không đánh đồng với kiểm thử tích hợp Live DB thật.
+> - **Phân định rõ phạm vi kiểm thử PostgreSQL:** Đã thực thi kiểm thử tích hợp trên database test riêng biệt `drugtime_seed_test` (loopback) với fixture nhân tạo (`synthetic_active_ingredient_alpha`, `synthetic_active_ingredient_beta`) để kiểm chứng cú pháp SQL, tính lũy thừa và cơ chế rollback transaction của bộ khung `seed_loader_scaffolding.TransactionSafeSeedLoader` (scaffold). Đây **KHÔNG PHẢI** là kiểm chứng production loader hay production safety gate trong môi trường vận hành thực tế, và **KHÔNG PHẢI** là E2E live endpoint của người bệnh (`POST /patients/{id}/interaction-checks`). Các bài test API endpoint vẫn được thực hiện qua FastAPI `TestClient` với mock adapters.
 > - **Chưa kiểm thử trên thiết bị di động vật lý:** Toàn bộ 13 bài test Flutter được thực hiện trên headless widget/flow test runner, chưa chạy trên thiết bị iOS/Android vật lý.
 > - **Phân tách rạch ròi giữa Lâm sàng và Kỹ thuật:**
 >   - 10 ca tương tác ĐTĐ (`TC-POS-01`..`10`) và 5 ca candidate âm tính (`TC-NEG-01`..`05`) được gắn nhãn `provisional`. Toàn bộ dữ liệu lâm sàng giữ nguyên trạng thái `pending_review` (chưa có chữ ký Dược sĩ lâm sàng); kết quả test chỉ chứng minh **draft-conformance kỹ thuật** với tập quy tắc dự thảo, **không tuyên bố độ chính xác y khoa (True Positive/False Positive lâm sàng)**.
 >   - 17 hoạt chất OTC (vai trò `trieu_chung_cap_tinh`) đã được chuyển sang thư mục `markdown/OTC_Phase2/` và loại khỏi deliverable PB24 đợt này, bảo lưu hồ sơ chứng cứ cho Phase 2.
 >   - 12 ca kỹ thuật (`synthetic`) sử dụng 100% định danh nhân tạo thuần túy để kiểm chứng cơ chế logic phần mềm, không đại diện cho tương tác lâm sàng.
 
-### 1.4. Biên Bản Điều Chỉnh Tiêu Chí Nghiệm Thu Kỹ Thuật (DoD Rebaseline Log)
+### 1.4. Biên Bản Ghi Nhận Chỉ Đạo Kỹ Thuật Từ Product Owner (PO Technical Guidance Log - 04/11/2026)
 > [!NOTE]
-> **Quyết định Rebaseline Kỹ thuật ngày 04/11/2026:**
-> - **Ngày phê duyệt:** 04/11/2026.
-> - **Phạm vi:** Toàn bộ cụm PB24 (Tasks 4.01, 4.02, 4.03) và 5 Draft PRs (#51, #17, #45, #55, #28).
-> - **Người ra quyết định:** Chủ dự án (Project Owner - PO).
-> - **Nội dung phê duyệt:** Chấp thuận hoàn tất nghiệm thu KỸ THUẬT phần mềm cho cụm PB24 dựa trên dữ liệu tương tác thuốc đã được đối chiếu cụ thể với các tài liệu tham khảo y văn chính thống (*Dược thư Quốc gia Việt Nam 2018*, *Sách Tương tác thuốc và chú ý khi chỉ định 2015*, *Martindale The Complete Drug Reference 38th*). **KHÔNG yêu cầu chữ ký số hoặc attestation của Dược sĩ làm điều kiện tiên quyết chặn hoàn tất nghiệm thu kỹ thuật.**
-> - **Ranh giới bảo lưu bắt buộc:**
->   1. Dữ liệu "có nguồn từ sách" chỉ chứng minh nguồn gốc và cơ chế tham khảo, **không đồng nghĩa đã được Dược sĩ lâm sàng kiểm định**.
->   2. **Phân biệt rõ trạng thái rà soát:** Trong hai workbook `PendingReview_v2.xlsx` và `PendingReview.xlsx`, trạng thái `"Đã đối chiếu nguồn"` chỉ xác nhận đã kiểm tra nguồn và số trang đối chiếu trong sách y văn (*DTQGVN 2018*, *Sách TT 2015*, *Martindale 38th*), **KHÔNG ĐỒNG NGHĨA "đã thẩm định lâm sàng" hay "được phép dùng lâm sàng"**.
->   3. Không gắn nhãn `clinically verified`, không tạo chữ ký/attestation giả mạo; toàn bộ 10 quy tắc ĐTĐ giữ nguyên trạng thái `pending_review` trong cơ sở dữ liệu và loader.
->   4. Câu miễn trừ trách nhiệm y tế (Disclaimer NFR03) bắt buộc luôn hiển thị trên UI Mobile và API payload.
->   5. Cổng an toàn Live DB (`TransactionSafeSeedLoader`) tiếp tục khóa chặt, không nạp dữ liệu chưa duyệt vào DB dùng chung hoặc production.
->   6. Giữ nguyên lịch sử tiêu chí ban đầu làm mốc đối chiếu phục vụ thẩm định y tế chuyên sâu sau này.
+> **Chỉ đạo Kỹ thuật từ Product Owner (PO) ngày 04/11/2026:**
+> - **Thời điểm ghi nhận:** 04/11/2026.
+> - **Phạm vi:** Toàn bộ cụm triển khai kỹ thuật PB24 (Tasks 4.01, 4.02, 4.03) và 5 Draft PRs (#51, #17, #45, #55, #28).
+> - **Người đưa chỉ đạo:** Chủ dự án (Project Owner - PO).
+> - **Nội dung chỉ đạo:** Cho phép tiếp tục triển khai các công việc kỹ thuật phần mềm (xây dựng engine, API endpoint, kiểm thử ma trận, đồng bộ hợp đồng OpenAPI và giao diện cảnh báo) mà **không cần chờ chữ ký số hoặc attestation của Dược sĩ lâm sàng làm điều kiện tiên quyết chặn tiến trình kỹ thuật**.
+> - **Ranh giới và giới hạn bắt buộc:**
+>   1. **Không phải phê duyệt/nghiệm thu chính thức:** Chỉ đạo này **KHÔNG PHẢI là văn bản phê duyệt nghiệm thu chính thức toàn bộ PB24**, và **KHÔNG bãi bỏ tiêu chí DoD lâm sàng**. Tiêu chí kiểm định lâm sàng vẫn được bảo lưu.
+>   2. **Ý nghĩa nguồn sách:** Dữ liệu "có nguồn từ sách" chỉ chứng minh nguồn gốc xuất xứ (provenance) và cơ chế tham khảo y văn (*Dược thư Quốc gia Việt Nam 2018*, *Sách Tương tác thuốc và chú ý khi chỉ định 2015*, *Martindale The Complete Drug Reference 38th*), **chưa được Dược sĩ lâm sàng kiểm định**, **tuyệt đối không được coi là clinical validation hay DoD lâm sàng đã đạt**.
+>   3. **Phân biệt rõ trạng thái rà soát:** Trong hai workbook `PendingReview_v2.xlsx` và `PendingReview.xlsx`, trạng thái `"Đã đối chiếu nguồn"` chỉ xác nhận đã kiểm tra sách và số trang đối chiếu y văn, **KHÔNG ĐỒNG NGHĨA "đã thẩm định lâm sàng" hay "được phép dùng lâm sàng"**. Dữ liệu **CHƯA ĐƯỢC DƯỢC SĨ KIỂM ĐỊNH**.
+>   4. **Không gắn nhãn giả mạo:** Tuyệt đối không gắn nhãn `clinically verified`, không tạo chữ ký/attestation giả; toàn bộ 10 quy tắc ĐTĐ của Task 4.01 được giữ nguyên trạng thái `pending_review` trong cơ sở dữ liệu và loader.
+>   5. **Câu miễn trừ trách nhiệm y tế bắt buộc:** Câu miễn trừ trách nhiệm y tế (Disclaimer NFR03) bắt buộc luôn hiển thị trên UI Mobile và API payload.
+>   6. **Cổng an toàn Live DB:** `TransactionSafeSeedLoader` tiếp tục chặn mọi hành vi nạp dữ liệu chưa duyệt vào DB production hoặc DB dùng chung.
+>   7. **Bảo tồn lịch sử tiêu chí:** Giữ nguyên lịch sử tiêu chí ban đầu làm mốc đối chiếu phục vụ thẩm định y tế chuyên sâu sau này.
 
 ---
 
@@ -96,6 +97,19 @@ Nhằm bảo đảm tính khách quan và minh bạch kỹ thuật, tình trạn
   4. `test/app/app_shell_test.dart`: *AC16: chuyển sang tab Người thân thì tải lại yêu cầu đang chờ*
   5. `test/app/app_shell_test.dart`: *AC20: Người giám sát trống → Mở tab Người thân về đúng tab*
 - **Kết luận:** Số bài test tăng từ 931 lên 944 đúng bằng **13 bài test mới của cụm PB24** (`test/features/interaction_check/`), và cả 13 bài đều **PASS 100%**. Năm bài test thất bại là **lỗi hồi quy nền có sẵn trên nhánh `main` trước khi PB24 được tách nhánh**, hoàn toàn độc lập với module PB24. Đợt kiểm toán ghi nhận trung thực bằng chứng này và không báo CI xanh giả mạo.
+
+### 2.4. Xác Minh PostgreSQL Tích Hợp & Database Seeding (Scaffold Scope)
+Nhằm kiểm chứng khả năng tương thích SQL và cơ chế an toàn transaction khi nạp dữ liệu vào cơ sở dữ liệu quan hệ, bài kiểm thử tích hợp chuyên biệt đã được thực thi trên môi trường PostgreSQL test riêng biệt:
+- **Cơ sở dữ liệu thử nghiệm:** `drugtime_seed_test` (loopback), container/instance cô lập dành riêng cho kiểm thử tự động, tuyệt đối không kết nối DB dùng chung (`postgres`) hay DB production.
+- **Phạm vi kiểm chứng:** Bài test sử dụng các fixture nhân tạo (`synthetic_active_ingredient_alpha`, `synthetic_active_ingredient_beta`) để kiểm chứng cú pháp SQL, tính lũy thừa (idempotency) và cơ chế rollback tự động của bộ khung `seed_loader_scaffolding.TransactionSafeSeedLoader` (scaffold loader).
+- **Ranh giới kỹ thuật bắt buộc:**
+  1. Đây **CHỈ LÀ KIỂM CHỨNG BỘ KHUNG (SCAFFOLD)** về mặt cú pháp SQL và an toàn transaction; **KHÔNG PHẢI là kiểm chứng production loader hay production safety gate** trong môi trường vận hành thực tế.
+  2. Đây **KHÔNG PHẢI là kiểm thử E2E live endpoint của người bệnh** (`POST /patients/{id}/interaction-checks`).
+  3. Fixture test tạm thời thiết lập metadata `verification_status="verified"` và tiền tố `SYNTHETIC_*` chỉ nhằm mục đích kiểm tra luồng phân nhánh code của scaffold, hoàn toàn không đại diện cho dữ liệu lâm sàng hay chữ ký/attestation y tế thật.
+- **Hiện trạng dữ liệu hậu kiểm (truy vấn SELECT chỉ đọc sau rollback):**
+  - Bảng `active_ingredients`: Ghi nhận tồn tại 2 bản ghi hoạt chất nhân tạo (`synthetic_active_ingredient_alpha`, `synthetic_active_ingredient_beta`) từ các lần chạy test trước.
+  - Bảng `active_ingredient_interactions`: **0 hàng** (không còn dữ liệu tương tác sau khi transaction rollback).
+  - Bảng `active_ingredient_dose_thresholds`: **0 hàng** (không còn dữ liệu ngưỡng liều sau khi transaction rollback).
 
 ---
 
@@ -187,15 +201,15 @@ Do không có thiết bị vật lý / emulator đang hoạt động và hệ th
 
 ## 6. Đối Chiếu Toàn Diện Tiêu Chí Hoàn Thành (Definition of Done) Task 4.03
 
-Dưới đây là bảng đánh giá 5 tiêu chí DoD của Task 4.03 (`sprint4_plan/4.03.md` dòng 21–27) được cập nhật theo quyết định Rebaseline Kỹ thuật ngày 04/11/2026 của Chủ dự án:
+Dưới đây là bảng đánh giá 5 tiêu chí DoD của Task 4.03 (`sprint4_plan/4.03.md` dòng 21–27) được cập nhật theo chỉ đạo kỹ thuật ngày 04/11/2026 của Product Owner:
 
 | STT | Tiêu chí hoàn thành (DoD) nguyên văn Kế hoạch 4.03 | Bằng chứng thực tế thu thập được | Đánh giá & Ranh giới kỹ thuật theo Quyết định Rebaseline (04/11/2026) | Trạng thái DoD Kỹ Thuật |
 |:---:|---|---|---|:---:|
 | **DoD 1** | Có bộ test case chuẩn hóa được ghi nhận rõ ràng (Input, Cặp thuốc đối chiếu, Kết quả mong đợi, Kết quả thực tế, Trạng thái Pass/Fail). | • Đã lập ma trận thiết kế chuẩn hóa 27 ca (`sprint4_plan/PB24/4.03_test_matrix.md` trong workspace).<br>• Đã thực thi tự động hóa 27/27 ca với kết quả 100% PASS.<br>• Bảng Mục 3 trong báo cáo này đã đối chiếu đầy đủ Input, Cặp thuốc, Expected, Test thực thi, Actual Result và Pass/Fail cho từng ca. | **ĐẠT MỨC KỸ THUẬT NỘI BỘ**<br>*(Chuẩn hóa đầy đủ mã ca, test code và bảng đối chiếu bàn giao)* | **ĐẠT** |
-| **DoD 2** | Tỷ lệ phát hiện True Positive đạt 100% trên bộ mẫu đã thẩm định y văn. | • Đã kiểm thử 10 ca tương tác ĐTĐ (`TC-POS-01`..`10`) và đạt 10/10 PASS ở mức draft-conformance kỹ thuật.<br>• Toàn bộ 10 quy tắc đã được đối chiếu cụ thể với từng trang sách DTQGVN 2018, Sách TT 2015, Martindale 38th.<br>• *Lịch sử tiêu chí cũ:* Yêu cầu chữ ký số Dược sĩ; nay PO chấp thuận nghiệm thu KỸ THUẬT dựa trên nguồn sách đối chiếu. | **ĐẠT TIÊU CHÍ KỸ THUẬT REBASELINE**<br>*(Đạt 100% draft-conformance kỹ thuật với 10 quy tắc có nguồn sách; dữ liệu vẫn mang nhãn `pending_review`, không thay thế quyết định lâm sàng)* | **ĐẠT (KỸ THUẬT REBASELINE)** |
+| **DoD 2** | Tỷ lệ phát hiện True Positive đạt 100% trên bộ mẫu đã thẩm định y văn. | • Đã kiểm thử 10 ca tương tác ĐTĐ (`TC-POS-01`..`10`) và đạt 10/10 PASS ở mức draft-conformance kỹ thuật.<br>• Toàn bộ 10 quy tắc đã được đối chiếu cụ thể với từng trang sách DTQGVN 2018, Sách TT 2015, Martindale 38th.<br>• *Lịch sử tiêu chí:* Tiêu chí yêu cầu chữ ký số Dược sĩ; PO chỉ đạo cho phép tiếp tục công việc kỹ thuật không chờ attestation; dữ liệu vẫn giữ `pending_review`, chưa có thẩm định lâm sàng chính thức. | **ĐẠT MỨC DRAFT-CONFORMANCE KỸ THUẬT**<br>*(Đạt 100% draft-conformance kỹ thuật với 10 quy tắc có nguồn sách; dữ liệu vẫn mang nhãn `pending_review`, chưa kiểm định lâm sàng)* | **ĐẠT (DRAFT KỸ THUẬT)** |
 | **DoD 3** | Tỷ lệ False Positive = 0% trên các cặp thuốc đối chứng an toàn. | • Đã kiểm thử 5 ca candidate âm tính (`TC-NEG-01`..`05`) và đạt 5/5 không sinh cảnh báo giả trên tập quy tắc.<br>• Năm ca này được trích xuất từ phác đồ phối hợp điều trị chính thức của Bộ Y tế (QĐ 5481/QĐ-BYT).<br>• *Khoảng trống:* Thiếu 5 ca để đạt chỉ tiêu 10 ca Negative Oracle của kế hoạch gốc; phác đồ điều trị chỉ chứng minh thuốc được phép phối hợp, chưa phải tập đối chứng âm tính dược lý toàn diện. | **ĐẠT MỘT PHẦN (CANDIDATE SUBSET) THEO REBASELINE**<br>*(0% false alarm trên 5 ca candidate phác đồ; thiếu tối thiểu 5 ca để đủ 10 ca; chưa thẩm định âm tính lâm sàng đầy đủ; không kết luận an toàn tuyệt đối)* | ⚠️ **ĐẠT MỘT PHẦN** |
 | **DoD 4** | Disclaimer y tế luôn hiển thị ở mọi phản hồi có cảnh báo (`disclaimer IS NOT NULL`). | • Đã xác minh qua `TC-DISC-01`, `test_interaction_checks_mixed_response` và các bài test mobile widget.<br>• Trong các ca và nhánh đã được kiểm thử trên Backend API và Mobile UI, disclaimer NFR03 đều hiển thị đúng từng ký tự bắt buộc. | **ĐÃ XÁC MINH TRONG CÁC CA/NHÁNH ĐÃ TEST**<br>*(Giới hạn trong phạm vi các ca test backend in-memory và widget test đã chạy)* | **ĐẠT (TRONG PHẠM VI TEST)** |
-| **DoD 5** | Có báo cáo nghiệm thu kiểm thử chi tiết bàn giao cho Product Owner / Mentor. | • Văn bản báo cáo này (`PB24_Test_Report.md`) được lập đầy đủ số liệu, lệnh chạy, ma trận truy vết, benchmark và đối chiếu DoD chi tiết phục vụ bàn giao nghiệm thu.<br>• Cập nhật đầy đủ biên bản Rebaseline Kỹ thuật 04/11/2026 và phân tích lỗi nền CI. | **ĐÃ HOÀN TẤT BÁO CÁO KỸ THUẬT CHI TIẾT**<br>*(Sẵn sàng bàn giao cho Product Owner và Mentor xem xét)* | **ĐẠT** |
+| **DoD 5** | Có báo cáo nghiệm thu kiểm thử chi tiết bàn giao cho Product Owner / Mentor. | • Văn bản báo cáo này (`PB24_Test_Report.md`) được lập đầy đủ số liệu, lệnh chạy, ma trận truy vết, benchmark và đối chiếu DoD chi tiết phục vụ bàn giao tiến độ kỹ thuật.<br>• Ghi nhận đầy đủ chỉ đạo kỹ thuật từ PO ngày 04/11/2026 và phân tích lỗi nền CI. | **ĐÃ HOÀN TẤT BÁO CÁO KỸ THUẬT CHI TIẾT**<br>*(Bàn giao tiến độ kỹ thuật draft/WIP cho Product Owner và Mentor xem xét)* | **ĐẠT** |
 
 ---
 
@@ -208,11 +222,12 @@ Dưới đây là bảng đánh giá 5 tiêu chí DoD của Task 4.03 (`sprint4_
 3. **Khoảng trống Ngưỡng liều số học (Dose Threshold):**
    - Bảy quy tắc phụ thuộc liều (`phu_thuoc_lieu`, INT_DIA_004..010) chưa có số liệu ngưỡng liều định lượng trong sách/tài liệu tham khảo; đã ghi nhận đầy đủ trong workbook, không tạo số liệu giả định.
 4. **Cổng Kiểm thử Tích hợp Cơ sở Dữ liệu Cô lập (Isolated Live DB Harness Gate):**
-   - Dự án tuân thủ nghiêm ngặt nguyên tắc bảo vệ DB dùng chung: chưa chạy E2E trực tiếp trên PostgreSQL thật mà qua mock/in-memory fixtures; cần thiết lập Docker PostgreSQL harness độc lập cho CI/CD.
-5. **Tồn đọng Fixture `id=116` trong cơ sở dữ liệu:**
-   - Các báo cáo kiểm toán trước ghi nhận script `test_live_db_seeding.py` từng gặp lỗi cleanup do vướng trigger cấm xóa, dẫn đến fixture `id=116` / `rule_id=116` (mang trạng thái `verified` với approval placeholder) có thể còn tồn tại trong DB.
-   - **Ranh giới an toàn tuyệt đối:** Đợt bàn giao này tuân thủ nguyên tắc chỉ đọc/đối soát, **TUYỆT ĐỐI KHÔNG ghi, sửa hoặc xóa cơ sở dữ liệu**.
-   - **Khẳng định kiểm toán:** Fixture `id=116` là bản ghi rác không hợp lệ sinh ra từ kiểm thử trước đây, **KHÔNG ĐƯỢC COI là attestation thật từ Dược sĩ và KHÔNG COI là cơ sở dữ liệu đã sạch**. Yêu cầu DBA dự án xử lý an toàn theo quy trình vận hành quản trị cơ sở dữ liệu.
+   - Đã thực thi kiểm chứng SQL scaffold trên database test chuyên biệt `drugtime_seed_test` với fixture synthetic; xác nhận transaction rollback bảo toàn 0 tương tác và 0 ngưỡng liều tồn đọng.
+   - Tuy nhiên, production loader và safety gate vận hành thực tế chưa được kiểm chứng trên DB thật; endpoint live `/patients/{id}/interaction-checks` chưa chạy E2E trên cơ sở dữ liệu đầy đủ.
+5. **Hiện trạng bản ghi `id=116` trong cơ sở dữ liệu dùng chung (`postgres`):**
+   - Truy vấn `SELECT` chỉ đọc trên DB dùng chung `postgres` quan sát thấy bản ghi `id=116` tồn tại với trạng thái `verified` và metadata chứa placeholder `[REDACTED_NAME]`, `[REDACTED_LICENSE]`.
+   - **Không gọi bản ghi này là rác hay giả mạo**, đồng thời **không khẳng định metadata của nó là thông tin thật**. Bản ghi này chưa được xác thực độc lập với bất kỳ nguồn phê duyệt lâm sàng chính thức nào bên ngoài.
+   - **Không đề xuất hoặc thực hiện cleanup** (không chạy DELETE/TRUNCATE/DROP, không yêu cầu can thiệp dữ liệu); đợt kiểm toán chỉ ghi nhận trung thực trạng thái đã quan sát khách quan qua truy vấn SELECT chỉ đọc.
 
 ---
 
@@ -222,14 +237,14 @@ Dưới đây là bảng đánh giá 5 tiêu chí DoD của Task 4.03 (`sprint4_
    - Thuật toán `InteractionEvaluator` (CD7), API Backend và giao diện Mobile đã được kiểm thử tự động hóa nghiêm ngặt (70 backend tests, 13 mobile tests, ruff check 100% PASS, flutter analyze 0 lỗi, flutter build bundle PASS).
    - Hiệu năng hệ thống NFR01 đạt độ trễ cực thấp (p95 đạt 17.73 ms, tối đa 24.09 ms << 2,000 ms).
    - Cơ chế bảo vệ liều lượng, giao hoán, xử lý thiếu dữ liệu và khử trùng lặp theo cặp thuốc hoạt động đúng đặc tả.
-2. **Về mặt Đánh giá Nghiệm thu & Khả năng Merge:**
-   - Cụm tính năng PB24 (Tasks 4.01, 4.02, 4.03) **ĐỦ ĐIỀU KIỆN REVIEW KỸ THUẬT NỘI BỘ (DRAFT PR READY)** trên cơ sở 5 Draft PRs (#51, #17, #45, #55, #28) theo quyết định Rebaseline của PO.
-   - **TUYỆT ĐỐI CHƯA MERGE** do còn tồn tại các blocker kỹ thuật và hạ tầng bắt buộc:
-     1. **Cổng DB Integration trên Harness Cô Lập (Task 4.01 DoD 4):** Chưa thiết lập Docker PostgreSQL harness độc lập; chưa chạy integration test trên DB thật; cấm chạy trên DB dùng chung.
-     2. **Trạng thái CI Frontend (PR #55):** GitHub Actions `build-and-test` vẫn đang BÁO ĐỎ (944 pass, 5 fail) do 5 bài test lỗi nền từ nhánh main; CI chưa xanh.
-     3. **Bản ghi fixture rác id=116 trong DB Dev:** Cần bàn giao cho DBA xử lý dọn dẹp an toàn; không coi là attestation thật hay DB sạch.
-     4. **Khoảng trống lâm sàng & dữ liệu:** Thiếu ngưỡng liều định lượng cho 7 quy tắc phụ thuộc liều; thiếu tương tác Severity 1; thiếu 5 ca đối chứng âm tính; dữ liệu tiếp tục giữ `pending_review` trong DB chờ Dược sĩ lâm sàng thẩm định chính thức.
+2. **Về mặt Đánh giá Trạng thái & Khả năng Merge:**
+   - Cụm tính năng PB24 (Tasks 4.01, 4.02, 4.03) **Ở TRẠNG THÁI DRAFT / WIP** trên cơ sở 5 Draft PRs (#51, #17, #45, #55, #28) theo chỉ đạo kỹ thuật của PO.
+   - **TUYỆT ĐỐI CHƯA MERGE** do còn tồn tại các blocker kỹ thuật và lâm sàng:
+     1. **Cổng DB Integration & Production Loader (Task 4.01 DoD 4):** Kiểm thử PostgreSQL trên `drugtime_seed_test` chỉ mới xác minh SQL scaffold; chưa kiểm chứng production loader/safety gate trên DB thật và chưa chạy live E2E endpoint bệnh nhân (`POST /patients/{id}/interaction-checks`).
+     2. **Trạng thái CI Frontend (PR #55):** GitHub Actions `build-and-test` vẫn đang FAIL/UNSTABLE (944 pass, 5 fail) do 5 bài test lỗi nền có sẵn từ nhánh `main`.
+     3. **Hiện trạng bản ghi id=116 trong DB dùng chung:** Đã quan sát thấy nhưng chưa được xác thực độc lập; không khẳng định metadata là thật và không đề xuất hoặc thực hiện cleanup dữ liệu.
+     4. **Khoảng trống lâm sàng & dữ liệu:** Dữ liệu chưa qua kiểm định của Dược sĩ lâm sàng; toàn bộ 10 quy tắc ĐTĐ giữ `pending_review` trong DB; thiếu ngưỡng liều định lượng cho 7 quy tắc phụ thuộc liều; thiếu 5 ca đối chứng âm tính; disclaimer NFR03 bắt buộc luôn duy trì.
 3. **Khuyến nghị bước tiếp theo:**
-   - Bàn giao báo cáo kỹ thuật và 5 Draft PRs cho Product Owner và Mentor xem xét.
-   - Yêu cầu DBA xử lý dọn dẹp an toàn fixture rác `id=116` trên cơ sở dữ liệu.
-   - Thiết lập Docker PostgreSQL Test Harness cô lập trên hạ tầng CI để phục vụ kiểm thử tích hợp tự động trước khi triển khai production.
+   - Bàn giao báo cáo kỹ thuật và 5 Draft PRs cho Product Owner và Mentor xem xét tiến độ kỹ thuật.
+   - Tiếp tục duy trì 5 PR ở trạng thái Draft/WIP, không merge.
+   - Chuẩn bị môi trường Docker PostgreSQL test harness cô lập cho CI trước khi triển khai production loader.
